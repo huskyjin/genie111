@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hi-Genie 백화점 상품 안전성 관리 체계</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Google Fonts: Inter 및 Outfit 추가 (영문/숫자용), Noto Sans KR (국문용) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- 모바일 기기 목업 영역 -->
+  <div class="mockup-container">
+    <div class="iphone-frame">
+        <!-- 다이내믹 아일랜드 -->
+        <div class="dynamic-island"></div>
+        <!-- 내부 모바일 웹뷰 화면 -->
+        <div class="mobile-viewport" id="mobile-viewport">
+          
+          <!-- [Home View] 기존 메인 홈 화면 -->
+          <div id="home-view" class="view-container">
+            <!-- [Header] 상단 영역 (배경 #f8f8f8, 높이 60px) -->
+          <header class="main-header">
+            <div class="header-logo">
+              <!-- 하이지니 미니 로고 -->
+              <span class="h-text">Hi</span><span class="g-text">Genie</span>
+            </div>
+            <div class="title_btn-right">
+              <!-- 랭킹 버튼 -->
+              <button class="btn-icon" id="btn_Rank2" title="랭킹">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+              </button>
+              <!-- 알림 버튼 -->
+              <button class="btn-icon" id="btnNoti" title="알림">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+                <span class="noti-dot"></span>
+              </button>
+              <!-- 언어 선택 버튼 -->
+              <div class="language-selector">
+                <button class="btn-language" id="btnLanguage" title="Select Language">
+                  <span class="flag-icon" id="flag-kor">🇰🇷</span>
+                  <span class="lang-text" id="lang-label">Korean</span>
+                  <svg class="arrow-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M6 9l6 6 6-6"/>
+                  </svg>
+                </button>
+                <div class="lang-dropdown" id="langDropdown">
+                  <div class="dropdown-item active" data-lang="ko">🇰🇷 한국어 (KR)</div>
+                  <div class="dropdown-item" data-lang="en">🇺🇸 English (EN)</div>
+                </div>
+              </div>
+              <!-- 로그아웃 버튼 -->
+              <button class="btn-icon btn-logout" id="btnLogout" title="로그아웃">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+                </svg>
+              </button>
+            </div>
+          </header>
+
+          <!-- 메인 콘텐츠 영역 -->
+          <main class="main-content">
+            
+            <!-- [Article 1] 상단 정보 & 차트 카드 -->
+            <article class="info-card">
+              
+              <!-- user_info 영역 -->
+              <div class="user-info-section">
+                <div class="user-meta">
+                  <h2 class="user-role" id="txt-user-role">관리자</h2>
+                  <p class="user-dept" id="txt-user-dept">롯데중앙연구소</p>
+                </div>
+                
+                <!-- 결재함 버튼 (50x50) -->
+                <div class="approval-box">
+                  <button class="btn-approval" id="btnApproval" title="결재함">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span class="approval-count" id="approval-count">0</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- centerChartWrap 영역 -->
+              <div class="chart-wrapper">
+                <div class="chart-header">
+                  <!-- 계열사 선택 드롭다운 -->
+                  <div class="select-wrapper">
+                    <select id="selectAffiliate" class="select-affiliate">
+                      <option value="lotte-dept" selected>롯데백화점</option>
+                      <option value="lotte-mart">롯데마트</option>
+                      <option value="lotte-super">롯데슈퍼</option>
+                      <option value="lotte-outlets">롯데아울렛</option>
+                    </select>
+                    <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                  </div>
+                  <!-- 기준일시 표시 -->
+                  <div class="chart-date">
+                    <span id="txt-date">2026.06.25</span>
+                    <span id="txt-time">01:01</span>
+                    <span id="txt-suffix">기준</span>
+                  </div>
+                </div>
+
+                <!-- 3단 세로 막대그래프 -->
+                <div class="bar-chart-container">
+                  
+                  <!-- 2025 평균점수 -->
+                  <div class="chart-column">
+                    <div class="bar-area">
+                      <div class="bar-value" id="val-last-year">95</div>
+                      <div class="bar-track">
+                        <div class="bar-fill last-year" style="--target-height: 95%;"></div>
+                      </div>
+                    </div>
+                    <div class="bar-label">
+                      <span class="year">2025</span>
+                      <span class="lbl-average">평균점수</span>
+                    </div>
+                  </div>
+
+                  <!-- 2026 평균점수 -->
+                  <div class="chart-column">
+                    <div class="bar-area">
+                      <div class="bar-value" id="val-this-year">95</div>
+                      <div class="bar-track">
+                        <div class="bar-fill this-year" style="--target-height: 95%;"></div>
+                      </div>
+                    </div>
+                    <div class="bar-label">
+                      <span class="year">2026</span>
+                      <span class="lbl-average">평균점수</span>
+                    </div>
+                  </div>
+
+                  <!-- 당월 평균점수 (2026.06) -->
+                  <div class="chart-column">
+                    <div class="bar-area">
+                      <div class="bar-value" id="val-this-month">94</div>
+                      <div class="bar-track">
+                        <div class="bar-fill this-month" style="--target-height: 94%;"></div>
+                      </div>
+                    </div>
+                    <div class="bar-label">
+                      <span class="year" id="lbl-current-month">2026.06</span>
+                      <span class="lbl-average">평균점수</span>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              <!-- 공지사항 롤링 배너 -->
+              <div class="notice-banner" id="btnNotice">
+                <div class="notice-container">
+                  <div class="notice-track" id="notice-track">
+                    <span class="notice-tag">[회수]</span>
+                    <span class="notice-text">주식회사 디와이푸드텍 농업회사법인 추억의 알짜소세지 세균수 기준규격 부적합 20260902</span>
+                  </div>
+                </div>
+                <button class="btn-more" title="더보기">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M9 5l7 7-7 7"/>
+                  </svg>
+                </button>
+              </div>
+
+            </article>
+
+            <!-- [Article 2] 하단 등록 & 그리드 메뉴 카드 -->
+            <article class="menu-card">
+              
+              <!-- 점포 등록 버튼 -->
+              <div class="shop-reg-section">
+                <button class="btn-shop-reg" id="btn_shopReg">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-plus">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  <span id="txt-shop-reg">점포 등록</span>
+                </button>
+              </div>
+
+              <!-- 8대 핵심 메뉴 그리드 (고객사 IA 반영) -->
+              <div class="menu-grid">
+                
+                <!-- 1. Buyer 평가 -->
+                <button class="menu-item" id="menu_buyer">
+                  <div class="menu-icon-wrapper">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="menu-svg icon-buyer">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="8.5" cy="7" r="4"></circle>
+                      <polyline points="16 11 18 13 22 9"></polyline>
+                    </svg>
+                  </div>
+                  <span class="menu-title" id="txt-menu-buyer">Buyer 평가</span>
+                </button>
+
+                <!-- 2. 제조사 현장 평가 -->
+                <button class="menu-item" id="menu_factory">
+                  <div class="menu-icon-wrapper">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="menu-svg icon-factory">
+                      <path d="M2 20h20"></path>
+                      <path d="M5 20V8l7 4V8l7 4v8"></path>
+                    </svg>
+                  </div>
+                  <span class="menu-title" id="txt-menu-factory">제조사 현장 평가</span>
+                </button>
+
+                <!-- 3. 정보 -->
+                <button class="menu-item" id="menu_info">
+                  <div class="menu-icon-wrapper">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="menu-svg icon-info">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="16" x2="12" y2="12"></line>
+                      <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                  </div>
+                  <span class="menu-title" id="txt-menu-info">정보</span>
+                </button>
+
+                <!-- 4. 지원 -->
+                <button class="menu-item" id="menu_ticket">
+                  <div class="menu-icon-wrapper">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="menu-svg icon-ticket">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                  </div>
+                  <span class="menu-title" id="txt-menu-ticket">지원</span>
+                </button>
+
+              </div>
+
+            </article>
+
+          </main>
+        </div> <!-- home-view close -->
+
+        <!-- [Buyer Eval View] 바이어 평가 화면 (신규 추가) -->
+        <div id="buyer-eval-view" class="view-container" style="display: none;">
+          
+          <!-- Buyer 평가 헤더 -->
+          <header class="main-header buyer-header">
+            <button class="btn-icon" id="btnBackToHome" title="홈으로 이동">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+              </svg>
+            </button>
+            <h2 class="header-title" id="txt-buyer-eval-title">Buyer 평가</h2>
+            <button class="btn-icon" id="btnOpenFilter" title="필터 열기">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+              </svg>
+              <span class="filter-active-dot" id="filterActiveDot"></span>
+            </button>
+          </header>
+
+          <!-- Buyer 평가 콘텐츠 컨테이너 -->
+          <div class="buyer-content">
+            
+            <!-- 구분 탭 (전체 / 적합 / 부적합) -->
+            <div class="tab-container">
+              <button class="tab-item active" data-tab="all" id="tab-all">전체</button>
+              <button class="tab-item" data-tab="fit" id="tab-fit">적합</button>
+              <button class="tab-item" data-tab="unfit" id="tab-unfit">부적합</button>
+            </div>
+
+            <!-- 평가 결과 리스트 카드 목록 -->
+            <div class="buyer-eval-list" id="buyerEvalList">
+              <!-- JS 동적 렌더링 또는 초기 데이터 로딩 -->
+            </div>
+
+          </div>
+
+          <!-- [Filter Overlay] 필터 조회 페이지 (image_20afe6.png 스타일) -->
+          <div class="filter-overlay" id="buyerFilterOverlay">
+            <div class="filter-drawer">
+              <div class="filter-header">
+                <h3>평가 조건 검색</h3>
+                <button class="btn-close-filter" id="btnCloseFilter">&times;</button>
+              </div>
+              
+              <div class="filter-body">
+                <!-- 1. 날짜 범위 선택 -->
+                <div class="filter-group">
+                  <label class="group-label">평가 등록 기간</label>
+                  <div class="date-range-inputs">
+                    <input type="date" id="filterDateStart" class="input-form" value="2026-06-01">
+                    <span class="range-divider">~</span>
+                    <input type="date" id="filterDateEnd" class="input-form" value="2026-06-30">
+                  </div>
+                </div>
+
+                <!-- 2. 드롭다운 선택 (사업부 및 업태) -->
+                <div class="filter-group">
+                  <label class="group-label">사업부 (Div.)</label>
+                  <div class="select-wrapper">
+                    <select id="filterDiv" class="input-form">
+                      <option value="all" selected>전체 사업부</option>
+                      <option value="농산">농산</option>
+                      <option value="수산">수산</option>
+                      <option value="축산">축산</option>
+                      <option value="조리">조리</option>
+                      <option value="그로서리">그로서리</option>
+                    </select>
+                    <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                  </div>
+                </div>
+
+                <div class="filter-group">
+                  <label class="group-label">업태</label>
+                  <div class="select-wrapper">
+                    <select id="filterBiz" class="input-form">
+                      <option value="all" selected>전체 업태</option>
+                      <option value="제조가공업">제조가공업</option>
+                      <option value="소분업">소분업</option>
+                      <option value="유통업">유통업</option>
+                      <option value="수입원">수입원</option>
+                    </select>
+                    <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                  </div>
+                </div>
+
+                <!-- 3. 체크박스 선택 (VHR 유형) -->
+                <div class="filter-group">
+                  <label class="group-label">VHR 유형</label>
+                  <div class="checkbox-row">
+                    <label class="chk-item">
+                      <input type="checkbox" name="filterVhr" value="VHR" checked>
+                      <span class="chk-box"></span>
+                      VHR
+                    </label>
+                    <label class="chk-item">
+                      <input type="checkbox" name="filterVhr" value="HR" checked>
+                      <span class="chk-box"></span>
+                      HR
+                    </label>
+                    <label class="chk-item">
+                      <input type="checkbox" name="filterVhr" value="R" checked>
+                      <span class="chk-box"></span>
+                      R
+                    </label>
+                  </div>
+                </div>
+
+                <!-- 4. 긴급 요청 여부 체크박스 -->
+                <div class="filter-group">
+                  <label class="chk-item chk-express-item">
+                    <input type="checkbox" id="filterExpress" value="Express">
+                    <span class="chk-box"></span>
+                    <strong>Express 긴급 요청건만 조회</strong>
+                  </label>
+                </div>
+
+              </div>
+
+              <!-- 필터 하단 적용 버튼 -->
+              <div class="filter-footer">
+                <button class="btn-filter-reset" id="btnFilterReset">초기화</button>
+                <button class="btn-filter-apply" id="btnFilterApply">적용하기</button>
+              </div>
+
+            </div>
+          </div>
+
+        </div> <!-- buyer-eval-view close -->
+
+        </div>
+      </div>
+    </div>
+
+  <!-- 알림 토글 토스트 메시지 -->
+  <div class="toast" id="toast">새로운 알림이 없습니다.</div>
+
+  <!-- 결재함 모달 시뮬레이터 -->
+  <div class="modal-overlay" id="approvalModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>결재 대기 문서 목록</h3>
+        <button class="btn-close-modal" id="btnCloseModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="empty-text" id="modal-empty-text">결재 대기 중인 안전성 검사 보고서가 없습니다.</p>
+        <ul class="approval-list" id="approval-list" style="display: none;">
+          <li class="approval-item">
+            <span class="badge status-pending">대기</span>
+            <div class="doc-info">
+              <p class="doc-title">[점검] 소공점 정기 안전성 진단 결과서</p>
+              <p class="doc-date">2026.06.24 16:45</p>
+            </div>
+            <button class="btn-action-approve" data-doc-id="1">승인</button>
+          </li>
+          <li class="approval-item">
+            <span class="badge status-pending">대기</span>
+            <div class="doc-info">
+              <p class="doc-title">[개선] 잠실점 냉동식품 온도 부적합 개선 조치서</p>
+              <p class="doc-date">2026.06.24 18:20</p>
+            </div>
+            <button class="btn-action-approve" data-doc-id="2">승인</button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>
