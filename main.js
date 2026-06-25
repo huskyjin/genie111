@@ -398,41 +398,33 @@ function showToast(message) {
 
 // 12. Buyer 평가 모의 데이터 (Mock Database)
 
-// 기본 체크리스트 템플릿 생성 헬퍼 함수
+// 기본 체크리스트 템플릿 생성 헬퍼 함수 (모든 문항 적합/부적합 2지선다로 구성)
 function createDefaultChecklist(status) {
   const isPending = status === 'pending';
-  // 기본 정량 점수 설정: 대기 상태는 0점, 적합 상태는 4-5점, 부적합 상태는 2-3점 분배
-  const defaultScore = (id) => {
-    if (isPending) return 0;
-    if (status === 'fit') {
-      return id === 'Q02' || id === 'Q08' ? 4 : 5; // 우수한 점수
-    }
-    // 부적합(unfit)의 경우 낮은 점수 섞음
-    return id === 'Q03' || id === 'Q05' ? 2 : 4;
-  };
-
-  // 기본 정성 결과 설정: 대기 상태는 빈값, 적합은 모두 'fit', 부적합은 일부 'unfit'
+  // 기본 판정 설정: 대기는 빈값, 적합 완료는 'fit', 부적합 완료는 특정 항목에 'unfit' 지정
   const defaultResult = (id) => {
     if (isPending) return '';
     if (status === 'fit') return 'fit';
-    return id === 'QL01' ? 'unfit' : 'fit'; // 부적합 업체는 건강진단결과서 등을 부적합 처리
+    // unfit인 업체의 경우 특정 리스크 항목을 부적합으로 설정
+    if (id === 'C01' || id === 'C11') return 'unfit';
+    return 'fit';
   };
 
   return [
-    { id: "Q01", type: "quantitative", category: "개인위생", item: "작업자 위생모/위생복/위생화 착용 및 청결 상태", desc: "조리 및 배식 종사자의 개인 위생 복장 착용 규정 준수 여부", maxScore: 5, score: defaultScore("Q01") },
-    { id: "Q02", type: "quantitative", category: "개인위생", item: "종사자 손 세척 및 소독 적정성", desc: "원료 취급 전, 화장실 사용 후 등 수시 손 세척/소독 준수 여부", maxScore: 5, score: defaultScore("Q02") },
-    { id: "Q03", type: "quantitative", category: "원료관리", item: "원부재료 입고 검사 및 신선도 상태", desc: "입고 검사 기록 작성 및 유통기한 경과 여부 확인", maxScore: 5, score: defaultScore("Q03") },
-    { id: "Q04", type: "quantitative", category: "원료관리", item: "식재료 보관 시 구분 보관 및 선입선출 이행", desc: "바닥 밀착 보관 금지, 농수축산물 및 가공품의 교차오염 방지 격리", maxScore: 5, score: defaultScore("Q04") },
-    { id: "Q05", type: "quantitative", category: "보관온도", item: "냉장/냉동고 온도 준수 및 온도계 정상 작동 여부", desc: "냉장 10℃ 이하, 냉동 -18℃ 이하 온도 관리 준수 기록", maxScore: 5, score: defaultScore("Q05") },
-    { id: "Q06", type: "quantitative", category: "공정관리", item: "교차오염 방지 조치 (도구 구분 사용)", desc: "칼, 도마, 식기 등의 용도별(육류/어류/채소류) 구분 사용 및 소독", maxScore: 5, score: defaultScore("Q06") },
-    { id: "Q07", type: "quantitative", category: "공정관리", item: "해동 식재료의 위생적 처리 및 재냉동 금지", desc: "유수해동 또는 냉장해동 기준 준수 및 해동 후 즉시 사용 여부", maxScore: 5, score: defaultScore("Q07") },
-    { id: "Q08", type: "quantitative", category: "환경위생", item: "작업장 세척/소독 상태 및 청결도", desc: "바닥, 벽, 배수구의 오물 제거 및 정기적인 소독제 소독 여부", maxScore: 5, score: defaultScore("Q08") },
-    { id: "Q09", type: "quantitative", category: "환경위생", item: "폐기물 용기 관리 및 위생적 밀폐 여부", desc: "폐기물 용기 뚜껑 비치 및 주기적인 배출 관리 상태", maxScore: 5, score: defaultScore("Q09") },
-    { id: "Q10", type: "quantitative", category: "표시사항", item: "원산지 및 알레르기 유발물질 정보 표시 적정성", desc: "고객 안내 메뉴판 또는 쇼케이스 내 법적 필수 표시사항 이행 여부", maxScore: 5, score: defaultScore("Q10") },
-    { id: "QL01", type: "qualitative", category: "법적준수", item: "조리 종사자 건강진단결과서(보건증) 유효 여부", desc: "현장 근무자 전원의 보건증 소지 및 유효기간 만료 여부 확인 (법적 필수)", result: defaultResult("QL01") },
-    { id: "QL02", type: "qualitative", category: "법적준수", item: "위생교육 수료증 보관 및 자체 위생교육 실시 기록", desc: "영업자 위생교육 및 매월 종사자 자체 교육 실시 기록 관리 여부", result: defaultResult("QL02") },
-    { id: "QL03", type: "qualitative", category: "방제위생", item: "작업장 내 해충(쥐, 바퀴벌레 등) 흔적 및 방제 상태", desc: "전문 방제업체 정기 점검 여부 및 서식 흔적 발견 여부", result: defaultResult("QL03") },
-    { id: "QL04", type: "qualitative", category: "설비안전", item: "정수 필터 교체 주기 준수 및 식수 적합 여부", desc: "제빙기 및 음용수 필터 최근 교체 일자 및 적합 판정 여부", result: defaultResult("QL04") }
+    { id: "C01", category: "개인위생", item: "작업자 위생모/위생복/위생화 착용 및 청결 상태", desc: "조리 및 배식 종사자의 개인 위생 복장 착용 규정 준수 여부", result: defaultResult("C01") },
+    { id: "C02", category: "개인위생", item: "종사자 손 세척 및 소독 적정성", desc: "원료 취급 전, 화장실 사용 후 등 수시 손 세척/소독 준수 여부", result: defaultResult("C02") },
+    { id: "C03", category: "원료관리", item: "원부재료 입고 검사 및 신선도 상태", desc: "입고 검사 기록 작성 및 유통기한 경과 여부 확인", result: defaultResult("C03") },
+    { id: "C04", category: "원료관리", item: "식재료 보관 시 구분 보관 및 선입선출 이행", desc: "바닥 밀착 보관 금지, 농수축산물 및 가공품의 교차오염 방지 격리", result: defaultResult("C04") },
+    { id: "C05", category: "보관온도", item: "냉장/냉동고 온도 준수 및 온도계 정상 작동 여부", desc: "냉장 10℃ 이하, 냉동 -18℃ 이하 온도 관리 준수 기록", result: defaultResult("C05") },
+    { id: "C06", category: "공정관리", item: "교차오염 방지 조치 (도구 구분 사용)", desc: "칼, 도마, 식기 등의 용도별(육류/어류/채소류) 구분 사용 및 소독", result: defaultResult("C06") },
+    { id: "C07", category: "공정관리", item: "해동 식재료의 위생적 처리 및 재냉동 금지", desc: "유수해동 또는 냉장해동 기준 준수 및 해동 후 즉시 사용 여부", result: defaultResult("C07") },
+    { id: "C08", category: "환경위생", item: "작업장 세척/소독 상태 및 청결도", desc: "바닥, 벽, 배수구의 오물 제거 및 정기적인 소독제 소독 여부", result: defaultResult("C08") },
+    { id: "C09", category: "환경위생", item: "폐기물 용기 관리 및 위생적 밀폐 여부", desc: "폐기물 용기 뚜껑 비치 및 주기적인 배출 관리 상태", result: defaultResult("C09") },
+    { id: "C10", category: "표시사항", item: "원산지 및 알레르기 유발물질 정보 표시 적정성", desc: "고객 안내 메뉴판 또는 쇼케이스 내 법적 필수 표시사항 이행 여부", result: defaultResult("C10") },
+    { id: "C11", category: "법적준수", item: "조리 종사자 건강진단결과서(보건증) 유효 여부", desc: "현장 근무자 전원의 보건증 소지 및 유효기간 만료 여부 확인 (법적 필수)", result: defaultResult("C11") },
+    { id: "C12", category: "법적준수", item: "위생교육 수료증 보관 및 자체 위생교육 실시 기록", desc: "영업자 위생교육 및 매월 종사자 자체 교육 실시 기록 관리 여부", result: defaultResult("C12") },
+    { id: "C13", category: "방제위생", item: "작업장 내 해충(쥐, 바퀴벌레 등) 흔적 및 방제 상태", desc: "전문 방제업체 정기 점검 여부 및 서식 흔적 발견 여부", result: defaultResult("C13") },
+    { id: "C14", category: "설비안전", item: "정수 필터 교체 주기 준수 및 식수 적합 여부", desc: "제빙기 및 음용수 필터 최근 교체 일자 및 적합 판정 여부", result: defaultResult("C14") }
   ];
 }
 
@@ -609,11 +601,24 @@ function initBuyerEval() {
   btnDetailSubmitFinal.addEventListener('click', () => {
     if (!activeDetailItem) return;
 
+    const checklist = activeDetailItem.checklist;
+
+    // 1) 모든 문항에 대한 평가 완료 여부 검증 (미완료 항목 발견 시 차단)
+    const hasEmpty = checklist.some(c => c.result === '');
+    if (hasEmpty) {
+      showToast('평가하지 않은 항목이 있습니다. 모든 항목을 평가해 주세요.');
+      return;
+    }
+
     // 특이사항 코멘트 최종 저장
     activeDetailItem.comment = document.getElementById('detailCommentInput').value;
 
-    // 종합 점수와 등급 계산 정보 획득
-    const { totalScore, grade } = calculateScoreAndGrade(activeDetailItem.checklist);
+    // 2) 최종 적합/부적합 자동 판정
+    const hasUnfit = checklist.some(c => c.result === 'unfit');
+    const finalVerdict = hasUnfit ? 'unfit' : 'fit';
+    
+    // 업체의 최종 상태 갱신
+    activeDetailItem.status = finalVerdict;
 
     // 최종 데이터 제출 처리 (콘솔 로깅 명세 준수)
     const submitData = {
@@ -626,24 +631,14 @@ function initBuyerEval() {
       vhrType: activeDetailItem.vhr,
       assessmentDate: new Date().toISOString().split('T')[0],
       isExpress: activeDetailItem.express,
-      totalScore: totalScore,
-      grade: grade,
+      finalVerdict: finalVerdict === 'fit' ? '최종 적합' : '최종 부적합',
       checklist: activeDetailItem.checklist,
       comment: activeDetailItem.comment,
       photoCount: activeDetailItem.photos ? activeDetailItem.photos.length : 0
     };
 
-    console.log('--- [롯데백화점 상품 안전성 최종 평가 제출 데이터] ---');
+    console.log('--- [롯데백화점 상품 안전성 최종 평가 제출 데이터 (Pass/Fail)] ---');
     console.log(JSON.stringify(submitData, null, 2));
-
-    // 업체 목록 상의 상태를 '대기'에서 완료 결과에 따른 '적합/부적합'으로 갱신
-    // 위생 법적 리스크(부적합 요인)가 있거나 총점이 80점 미만이면 부적합(unfit), 그 외 적합(fit) 판정
-    const hasUnfitQualitative = activeDetailItem.checklist.some(c => c.type === 'qualitative' && c.result === 'unfit');
-    if (totalScore >= 80 && !hasUnfitQualitative) {
-      activeDetailItem.status = 'fit';
-    } else {
-      activeDetailItem.status = 'unfit';
-    }
 
     showToast('최종 평가서 제출이 완료되었습니다.');
 
@@ -803,144 +798,87 @@ function openBuyerDetail(item) {
   updateRealtimeDisplay(item.checklist);
 }
 
-// 18. 체크리스트 문항 그리기
+// 18. 체크리스트 문항 그리기 (전 문항 적합/부적합 2지선다로 렌더링)
 function renderChecklistQuestions(checklist) {
-  const quantContainer = document.getElementById('quantitativeList');
-  const qualContainer = document.getElementById('qualitativeList');
+  const container = document.getElementById('checklistQuestions');
+  if (!container) return;
 
-  quantContainer.innerHTML = '';
-  qualContainer.innerHTML = '';
-
-  let quantIndex = 1;
-  let qualIndex = 1;
+  container.innerHTML = '';
+  let index = 1;
 
   checklist.forEach(question => {
     const card = document.createElement('div');
     card.className = 'inspect-card';
 
-    if (question.type === 'quantitative') {
-      // 정량 문항 렌더링 (0~5점 라디오 세그먼트)
-      card.innerHTML = `
-        <div class="inspect-card-header">
-          <span class="item-num">정량 문항 ${quantIndex++}</span>
-          <h5 class="item-title">${question.item}</h5>
-          <p class="item-desc">${question.desc}</p>
-        </div>
-        <div class="segment-control" data-qid="${question.id}">
-          ${[0, 1, 2, 3, 4, 5].map(score => {
-            const isActive = question.score === score ? 'active' : '';
-            return `<button class="segment-btn ${isActive}" data-score="${score}">${score}</button>`;
-          }).join('')}
-        </div>
-      `;
+    const isFitActive = question.result === 'fit' ? 'active' : '';
+    const isUnfitActive = question.result === 'unfit' ? 'active' : '';
 
-      // 점수 버튼 이벤트 바인딩
-      card.querySelectorAll('.segment-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const score = parseInt(e.target.getAttribute('data-score'));
-          question.score = score;
+    card.innerHTML = `
+      <div class="inspect-card-header">
+        <span class="item-num">점검 항목 ${index++}</span>
+        <h5 class="item-title">${question.item}</h5>
+        <p class="item-desc">${question.desc}</p>
+      </div>
+      <div class="binary-control" data-qid="${question.id}">
+        <button class="binary-btn btn-fit ${isFitActive}" data-result="fit">
+          <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          적합
+        </button>
+        <button class="binary-btn btn-unfit ${isUnfitActive}" data-result="unfit">
+          <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          부적합
+        </button>
+      </div>
+    `;
 
-          // 비주얼 클래스 토글
-          card.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
-          e.target.classList.add('active');
+    // 적합/부적합 버튼 이벤트 바인딩
+    card.querySelectorAll('.binary-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const resultBtn = e.target.closest('.binary-btn');
+        const result = resultBtn.getAttribute('data-result');
+        question.result = result;
 
-          // 실시간 점수 판정 업데이트
-          updateRealtimeDisplay(checklist);
-        });
+        // 비주얼 클래스 토글
+        card.querySelectorAll('.binary-btn').forEach(b => b.classList.remove('active'));
+        resultBtn.classList.add('active');
+
+        // 실시간 점수 판정 업데이트
+        updateRealtimeDisplay(checklist);
       });
+    });
 
-      quantContainer.appendChild(card);
-    } else if (question.type === 'qualitative') {
-      // 정성 문항 렌더링 (적합/부적합 2단 세그먼트)
-      const isFitActive = question.result === 'fit' ? 'active' : '';
-      const isUnfitActive = question.result === 'unfit' ? 'active' : '';
-
-      card.innerHTML = `
-        <div class="inspect-card-header">
-          <span class="item-num">정성 문항 ${qualIndex++}</span>
-          <h5 class="item-title">${question.item}</h5>
-          <p class="item-desc">${question.desc}</p>
-        </div>
-        <div class="binary-control" data-qid="${question.id}">
-          <button class="binary-btn btn-fit ${isFitActive}" data-result="fit">
-            <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-            적합
-          </button>
-          <button class="binary-btn btn-unfit ${isUnfitActive}" data-result="unfit">
-            <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-            부적합
-          </button>
-        </div>
-      `;
-
-      // 적합/부적합 버튼 이벤트 바인딩
-      card.querySelectorAll('.binary-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const resultBtn = e.target.closest('.binary-btn');
-          const result = resultBtn.getAttribute('data-result');
-          question.result = result;
-
-          // 비주얼 클래스 토글
-          card.querySelectorAll('.binary-btn').forEach(b => b.classList.remove('active'));
-          resultBtn.classList.add('active');
-
-          // 실시간 점수 판정 업데이트
-          updateRealtimeDisplay(checklist);
-        });
-      });
-
-      qualContainer.appendChild(card);
-    }
+    container.appendChild(card);
   });
 }
 
-// 19. 점수 및 등급 계산 알고리즘
-function calculateScoreAndGrade(checklist) {
-  // 1) 정량 점수 합산 (10문항 * 5점 만점 = 50점 만점)
-  const quantitativeItems = checklist.filter(c => c.type === 'quantitative');
-  const sumScore = quantitativeItems.reduce((acc, cur) => acc + (cur.score || 0), 0);
-  
-  // 100점 만점 기준으로 백분율 스케일 업 (합계 * 2)
-  const totalScore = sumScore * 2;
-
-  // 2) 정성 점수 분석 (부적합 항목 개수 산출)
-  const qualitativeItems = checklist.filter(c => c.type === 'qualitative');
-  const unfitCount = qualitativeItems.filter(c => c.result === 'unfit').length;
-
-  // 3) 등급 판단
-  let grade = 'C등급';
-  let gradeClass = 'grade-c';
-
-  if (totalScore >= 95 && unfitCount === 0) {
-    grade = 'S등급';
-    gradeClass = 'grade-s';
-  } else if (totalScore >= 85 && unfitCount === 0) {
-    grade = 'A등급';
-    gradeClass = 'grade-a';
-  } else if (totalScore >= 70 && unfitCount <= 1) {
-    grade = 'B등급';
-    gradeClass = 'grade-b';
-  } else {
-    grade = 'C등급';
-    gradeClass = 'grade-c';
+// 19. 최종 적합/부적합 자동 판정 알고리즘
+function calculateFinalVerdict(checklist) {
+  // 1) 미평가 항목이 존재하는 경우 -> 판정 대기
+  const hasEmpty = checklist.some(c => c.result === '');
+  if (hasEmpty) {
+    return { verdict: 'pending', label: '판정 대기', className: 'verdict-pending' };
   }
 
-  return { totalScore, grade, gradeClass };
+  // 2) 단 하나라도 부적합이 있는 경우 -> 최종 부적합
+  const hasUnfit = checklist.some(c => c.result === 'unfit');
+  if (hasUnfit) {
+    return { verdict: 'unfit', label: '최종 부적합', className: 'verdict-unfit' };
+  }
+
+  // 3) 모든 항목이 적합한 경우 -> 최종 적합
+  return { verdict: 'fit', label: '최종 적합', className: 'verdict-fit' };
 }
 
-// 20. 실시간 화면 점수/등급 컴포넌트 렌더링
+// 20. 실시간 화면 최종 판정 배너 업데이트
 function updateRealtimeDisplay(checklist) {
-  const { totalScore, grade, gradeClass } = calculateScoreAndGrade(checklist);
+  const { label, className } = calculateFinalVerdict(checklist);
+  const verdictEl = document.getElementById('realtime-final-verdict');
 
-  const scoreEl = document.getElementById('realtime-total-score');
-  const gradeEl = document.getElementById('realtime-total-grade');
-
-  scoreEl.textContent = totalScore;
-  gradeEl.textContent = grade;
-  
-  // 모든 이전 등급 클래스 제거 후 해당 클래스 추가
-  gradeEl.className = 'val-grade';
-  gradeEl.classList.add(gradeClass);
+  if (verdictEl) {
+    verdictEl.textContent = label;
+    verdictEl.className = 'val-verdict';
+    verdictEl.classList.add(className);
+  }
 }
 
 // 21. 사진 첨부 미리보기 영역 렌더링

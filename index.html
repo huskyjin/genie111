@@ -427,15 +427,8 @@
 
             <!-- 평가 문항 리스트 영역 -->
             <div class="inspection-section">
-              <h4 class="section-title">정량 점검 항목 (0~5점 척도)</h4>
-              <div class="inspection-list" id="quantitativeList">
-                <!-- JS 동적 렌더링 -->
-              </div>
-            </div>
-
-            <div class="inspection-section" style="margin-top: 15px;">
-              <h4 class="section-title">정성 점검 항목 (적합 / 부적합)</h4>
-              <div class="inspection-list" id="qualitativeList">
+              <h4 class="section-title">위생 안전성 점검 항목 (적합 / 부적합)</h4>
+              <div class="inspection-list" id="checklistQuestions">
                 <!-- JS 동적 렌더링 -->
               </div>
             </div>
@@ -469,19 +462,14 @@
 
           </div>
 
-          <!-- 하단 종합 점수/등급 고정 패널 -->
+          <!-- 하단 최종 평가 판정 고정 패널 -->
           <div class="detail-scoring-panel">
             <div class="score-meta">
               <div class="meta-item">
-                <span class="lbl">실시간 총점</span>
+                <span class="lbl">현장 위생 점검 판정</span>
                 <div class="val-wrapper">
-                  <strong class="val-score" id="realtime-total-score">0</strong>
-                  <span class="max-score">/ 100 점</span>
+                  <strong class="val-verdict verdict-pending" id="realtime-final-verdict">판정 대기</strong>
                 </div>
-              </div>
-              <div class="meta-item align-right">
-                <span class="lbl">평가 등급</span>
-                <span class="val-grade grade-c" id="realtime-total-grade">C등급</span>
               </div>
             </div>
             <div class="scoring-actions">
