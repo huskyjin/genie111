@@ -108,16 +108,16 @@ body {
 
 /* 7. 모바일 뷰포트 내부 레이아웃 */
 
-/* [Header] 스타일 (높이 60px) */
+/* [Header] 스타일 (높이 및 다이내믹 아일랜드 여백 최적화) */
 .main-header {
-  height: 60px;
+  height: 84px;
   background: var(--bg-primary);
   border-bottom: 1px solid var(--border-light);
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 20px;
-  padding-top: 10px; /* 다이내믹 아일랜드 아래 여백 */
+  padding-top: 36px; /* 다이내믹 아일랜드 아래로 배치 */
   position: relative;
   z-index: 99;
 }
