@@ -380,6 +380,118 @@
 
         </div> <!-- buyer-eval-view close -->
 
+        <!-- [Buyer Detail View] 바이어 상세 평가 화면 (신규 추가) -->
+        <div id="buyer-detail-view" class="view-container" style="display: none;">
+          
+          <!-- 상세 평가 헤더 -->
+          <header class="main-header buyer-header">
+            <button class="btn-icon" id="btnBackToEvalList" title="목록으로 이동">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+              </svg>
+            </button>
+            <h2 class="header-title" id="txt-buyer-detail-title">상세 평가 등록</h2>
+            <!-- 헤더 우측 균형용 빈 노드 -->
+            <div style="width: 32px;"></div>
+          </header>
+
+          <!-- 상세 평가 콘텐츠 컨테이너 (스크롤 가능) -->
+          <div class="buyer-detail-content">
+            
+            <!-- 업체 요약 정보 배너 -->
+            <div class="detail-summary-banner">
+              <div class="banner-main">
+                <h3 id="detail-company-name">업체명</h3>
+                <span class="vhr-type-badge" id="detail-vhr-type">VHR</span>
+              </div>
+              <div class="banner-grid">
+                <div class="banner-field">
+                  <span class="lbl">사업부 (Div.)</span>
+                  <span class="val" id="detail-div">농산</span>
+                </div>
+                <div class="banner-field">
+                  <span class="lbl">업태</span>
+                  <span class="val" id="detail-biz">제조가공업</span>
+                </div>
+                <div class="banner-field">
+                  <span class="lbl">점포명</span>
+                  <span class="val" id="detail-store-name">본점 (소공점)</span>
+                </div>
+                <div class="banner-field">
+                  <span class="lbl">바이어 ID</span>
+                  <span class="val" id="detail-buyer-id">BUYER_DEPT_01</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 평가 문항 리스트 영역 -->
+            <div class="inspection-section">
+              <h4 class="section-title">정량 점검 항목 (0~5점 척도)</h4>
+              <div class="inspection-list" id="quantitativeList">
+                <!-- JS 동적 렌더링 -->
+              </div>
+            </div>
+
+            <div class="inspection-section" style="margin-top: 15px;">
+              <h4 class="section-title">정성 점검 항목 (적합 / 부적합)</h4>
+              <div class="inspection-list" id="qualitativeList">
+                <!-- JS 동적 렌더링 -->
+              </div>
+            </div>
+
+            <!-- 현장 사진 첨부 영역 -->
+            <div class="detail-extra-section">
+              <h4 class="section-title">현장 점검 사진 첨부</h4>
+              <div class="image-upload-wrapper">
+                <label for="detailImageInput" class="upload-trigger-zone">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                  </svg>
+                  <span>현장 사진 추가 (직접 촬영/파일 선택)</span>
+                  <input type="file" id="detailImageInput" accept="image/*" multiple style="display: none;">
+                </label>
+                <!-- 업로드 이미지 미리보기 썸네일 리스트 -->
+                <div class="upload-preview-grid" id="uploadPreviewGrid">
+                  <!-- JS 동적 이미지 썸네일 노출 -->
+                </div>
+              </div>
+            </div>
+
+            <!-- 특이사항 및 종합 의견 필드 -->
+            <div class="detail-extra-section">
+              <h4 class="section-title">현장 점검 특이사항 및 종합 의견</h4>
+              <div class="textarea-wrapper">
+                <textarea id="detailCommentInput" class="input-form textarea-form" placeholder="점검 중 발견된 위생 미비 사항 및 개선 지시사항 등을 자세히 기입해 주세요."></textarea>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 하단 종합 점수/등급 고정 패널 -->
+          <div class="detail-scoring-panel">
+            <div class="score-meta">
+              <div class="meta-item">
+                <span class="lbl">실시간 총점</span>
+                <div class="val-wrapper">
+                  <strong class="val-score" id="realtime-total-score">0</strong>
+                  <span class="max-score">/ 100 점</span>
+                </div>
+              </div>
+              <div class="meta-item align-right">
+                <span class="lbl">평가 등급</span>
+                <span class="val-grade grade-c" id="realtime-total-grade">C등급</span>
+              </div>
+            </div>
+            <div class="scoring-actions">
+              <button class="btn-scoring-draft" id="btnDetailSaveDraft">임시 저장</button>
+              <button class="btn-scoring-submit" id="btnDetailSubmitFinal">최종 제출 완료</button>
+            </div>
+          </div>
+
+        </div> <!-- buyer-detail-view close -->
+
         </div>
       </div>
     </div>
