@@ -14,7 +14,5 @@
   "devDependencies": {
     "vite": "^5.0.0"
   },
-  "dependencies": {
-    "xlsx": "^0.18.5"
-  }
+  "dependencies": {}
 }

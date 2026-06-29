@@ -1,5 +1,5 @@
 /* ==========================================
-   Hi-Genie 프로토타입 인터랙션 스크립트 (main.js)
+   Hi-Genie 프로토타입 인터랙션 스크립트 (main.js - 경량화 껍데기 버전)
    ========================================== */
 
 // 1. 다국어 텍스트 데이터 사전 (Dictionary)
@@ -48,41 +48,24 @@ const translations = {
 
 // 2. 계열사별 차트 모의 데이터 (Mock Database)
 const affiliateData = {
-  'lotte-dept': {
-    lastYear: 95,
-    thisYear: 95,
-    thisMonth: 94
-  },
-  'lotte-mart': {
-    lastYear: 92,
-    thisYear: 94,
-    thisMonth: 95
-  },
-  'lotte-super': {
-    lastYear: 90,
-    thisYear: 91,
-    thisMonth: 89
-  },
-  'lotte-outlets': {
-    lastYear: 93,
-    thisYear: 93,
-    thisMonth: 93
-  }
+  'lotte-dept': { lastYear: 95, thisYear: 95, thisMonth: 94 },
+  'lotte-mart': { lastYear: 92, thisYear: 94, thisMonth: 95 },
+  'lotte-super': { lastYear: 90, thisYear: 91, thisMonth: 89 },
+  'lotte-outlets': { lastYear: 93, thisYear: 93, thisMonth: 93 }
 };
 
 // 3. 상태 관리 변수
 let currentLang = 'ko';
-let pendingApprovalCount = 2; // 초기 결재 대기 2건
+let pendingApprovalCount = 2;
+let currentBuyerId = 'BUYER_DEPT_01'; // 가상 바이어 ID
 
-// 4. DOM 요소 셀렉터
+// DOM 요소 셀렉터
 const dom = {
   selectAffiliate: document.getElementById('selectAffiliate'),
   btnLanguage: document.getElementById('btnLanguage'),
   langDropdown: document.getElementById('langDropdown'),
   flagKor: document.getElementById('flag-kor'),
   langLabel: document.getElementById('lang-label'),
-  
-  // 번역 대상 텍스트 노드
   txtUserRole: document.getElementById('txt-user-role'),
   txtUserDept: document.getElementById('txt-user-dept'),
   txtShopReg: document.getElementById('txt-shop-reg'),
@@ -92,23 +75,17 @@ const dom = {
   txtMenuTicket: document.getElementById('txt-menu-ticket'),
   lblAverages: document.querySelectorAll('.lbl-average'),
   txtSuffix: document.getElementById('txt-suffix'),
-  
-  // 차트 스펙
   valLastYear: document.getElementById('val-last-year'),
   valThisYear: document.getElementById('val-this-year'),
   valThisMonth: document.getElementById('val-this-month'),
   fillLastYear: document.querySelector('.bar-fill.last-year'),
   fillThisYear: document.querySelector('.bar-fill.this-year'),
   fillThisMonth: document.querySelector('.bar-fill.this-month'),
-  
-  // 알림 & 공지사항
   btnNoti: document.getElementById('btnNoti'),
   notiDot: document.querySelector('.noti-dot'),
   btnNotice: document.getElementById('btnNotice'),
   noticeTrack: document.getElementById('notice-track'),
   toast: document.getElementById('toast'),
-  
-  // 결재 모달
   btnApproval: document.getElementById('btnApproval'),
   approvalCount: document.getElementById('approval-count'),
   sidebarApprovalCount: document.getElementById('sidebar-approval-count'),
@@ -118,796 +95,1440 @@ const dom = {
   approvalList: document.getElementById('approval-list'),
 };
 
-// 5. 초기화 함수
+// 가상 데이터베이스 (유저 플로우 구동에 필요한 최소 데이터)
+const buyerMockData = [
+  { id: 1, buyerId: 'BUYER_DEPT_01', storeName: '본점 (소공점)', name: '주식회사 푸드링크', date: '2026-06-24', div: '농산', biz: '제조가공업', vhr: 'VHR', express: true, status: 'fit', comment: '위생 복장 상태 양호하며 선도 우수함.' },
+  { id: 2, buyerId: 'BUYER_DEPT_01', storeName: '잠실점', name: '(주)대현수산', date: '2026-06-25', div: '수산', biz: '소분업', vhr: 'HR', express: false, status: 'pending', comment: '' },
+  { id: 3, buyerId: 'BUYER_DEPT_01', storeName: '강남점', name: '영양축산푸드', date: '2026-06-23', div: '축산', biz: '제조가공업', vhr: 'R', express: true, status: 'unfit', comment: '보건증 만료 및 온도 관리 준수 지적.' },
+  { id: 4, buyerId: 'BUYER_DEPT_01', storeName: '영등포점', name: '롯데조리유통', date: '2026-06-18', div: '조리', biz: '유통업', vhr: 'VHR', express: false, status: 'fit', comment: '식재료 선입선출 준수 및 도구 소독 철저.' },
+  { id: 5, buyerId: 'BUYER_DEPT_01', storeName: '노원점', name: '삼성그로서리', date: '2026-06-20', div: '그로서리', biz: '수입원', vhr: 'HR', express: false, status: 'fit', comment: '해외 수입제품 표시 기준 준수 양호.' },
+  { id: 6, buyerId: 'BUYER_DEPT_01', storeName: '인천점', name: '바다사랑수산', date: '2026-06-28', div: '수산', biz: '제조가공업', vhr: 'VHR', express: false, status: 'unfit', comment: '조리 도구 구분 사용 미비로 인한 교차오염 우려 지적.' }
+];
+
+const mfrMockData = [
+  { id: 1, buyerId: 'BUYER_DEPT_01', type: 'OEM', name: '우리가공식품', div: '농산', biz: '제조가공업', vhr: 'R', owner: '김제조', licenseNo: '123-45-67890', regDate: '2026-06-15', inspector: '김바이어', status: 'pending', partner: '주식회사 푸드링크', recheck: true }
+];
+
+const companyMasterList = [
+  { id: 1, name: '주식회사 푸드링크', owner: '홍길동', licenseNo: '120-01-12345', address: '서울시 중구 소공동', div: '농산', biz: '제조가공업', vhr: 'VHR' },
+  { id: 2, name: '삼양푸드스퀘어', owner: '김철수', licenseNo: '104-12-56789', address: '서울시 강남구 역삼동', div: '수산', biz: '소분업', vhr: 'HR' }
+];
+
+let activeBuyerItem = null;
+let activeMfrItem = null;
+let currentSearchType = 'buyer';
+let isNameChecked = false;
+let isLicenseChecked = false;
+let isBuyerDetailReadOnly = false;
+let buyerActiveTab = 'all';
+
+// 초기화 함수
 function init() {
-  // 초기 결재 배지 세팅
   updateApprovalBadge();
-  
-  // 공지사항 흐르기 애니메이션 설정
   setupNoticeAnimation();
-
-  // 이벤트 바인딩
   bindEvents();
-
-  // Buyer 평가 시뮬레이션 초기화
   initBuyerEval();
+  initMfrEval();
+  initMasterSearch();
 }
 
-// 6. 이벤트 핸들러 및 리스너 등록
+// 공통 이벤트 및 다국어, 알림 처리
 function bindEvents() {
+  if (dom.selectAffiliate) {
+    dom.selectAffiliate.addEventListener('change', (e) => updateChartData(e.target.value));
+  }
+  if (dom.btnLanguage) {
+    dom.btnLanguage.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dom.langDropdown.classList.toggle('show');
+    });
+  }
+  document.addEventListener('click', () => dom.langDropdown?.classList.remove('show'));
   
-  // 계열사 변경 시 차트 데이터 갱신
-  dom.selectAffiliate.addEventListener('change', (e) => {
-    const value = e.target.value;
-    updateChartData(value);
-  });
-
-  // 언어 선택 드롭다운 토글
-  dom.btnLanguage.addEventListener('click', (e) => {
-    e.stopPropagation();
-    dom.langDropdown.classList.toggle('show');
-  });
-
-  // 전역 클릭 시 드롭다운 닫기
-  document.addEventListener('click', () => {
-    dom.langDropdown.classList.remove('show');
-  });
-
-  // 다국어 변경 처리
-  dom.langDropdown.addEventListener('click', (e) => {
+  dom.langDropdown?.addEventListener('click', (e) => {
     const item = e.target.closest('.dropdown-item');
     if (!item) return;
-    
-    // active 클래스 제어
     dom.langDropdown.querySelectorAll('.dropdown-item').forEach(el => el.classList.remove('active'));
     item.classList.add('active');
-
-    const selectedLang = item.getAttribute('data-lang');
-    changeLanguage(selectedLang);
+    changeLanguage(item.getAttribute('data-lang'));
   });
 
-  // 알림 클릭 시 토스트 노출
-  dom.btnNoti.addEventListener('click', () => {
+  dom.btnNoti?.addEventListener('click', () => {
     showToast(translations[currentLang].toastNoNoti);
-    dom.notiDot.style.display = 'none'; // 알림 확인 시 점 소멸
+    if (dom.notiDot) dom.notiDot.style.display = 'none';
   });
 
-  // 가상 알림 추가 시뮬레이션 (3초 후 상단 알림 배지 활성화)
   setTimeout(() => {
-    dom.notiDot.style.display = 'block';
+    if (dom.notiDot) dom.notiDot.style.display = 'block';
   }, 3000);
 
-  // 결재함 모달 제어
-  dom.btnApproval.addEventListener('click', () => {
-    dom.approvalModal.classList.add('show');
+  dom.btnApproval?.addEventListener('click', () => dom.approvalModal?.classList.add('show'));
+  dom.btnCloseModal?.addEventListener('click', () => dom.approvalModal?.classList.remove('show'));
+  
+  dom.approvalModal?.addEventListener('click', (e) => {
+    if (e.target === dom.approvalModal) dom.approvalModal.classList.remove('show');
   });
 
-  dom.btnCloseModal.addEventListener('click', () => {
-    dom.approvalModal.classList.remove('show');
-  });
-
-  dom.approvalModal.addEventListener('click', (e) => {
-    if (e.target === dom.approvalModal) {
-      dom.approvalModal.classList.remove('show');
-    }
-  });
-
-  // 결재 승인 처리 시뮬레이션
-  dom.approvalList.addEventListener('click', (e) => {
-    const btnApprove = e.target.closest('.btn-action-approve');
-    if (!btnApprove) return;
-
-    const item = btnApprove.closest('.approval-item');
-    
-    // 리스트에서 부드럽게 삭제
+  dom.approvalList?.addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-action-approve');
+    if (!btn) return;
+    const item = btn.closest('.approval-item');
     item.style.transition = 'all 0.3s ease-out';
     item.style.opacity = '0';
     item.style.transform = 'translateX(50px)';
-    
     setTimeout(() => {
       item.remove();
       pendingApprovalCount--;
       updateApprovalBadge();
       showToast(translations[currentLang].toastApproved);
-
-      // 전체 승인 시 분기 처리
       if (pendingApprovalCount <= 0) {
         dom.approvalList.style.display = 'none';
-        dom.modalEmptyText.style.display = 'block';
-        dom.modalEmptyText.textContent = translations[currentLang].modalEmpty;
+        if (dom.modalEmptyText) {
+          dom.modalEmptyText.style.display = 'block';
+          dom.modalEmptyText.textContent = translations[currentLang].modalEmpty;
+        }
       }
     }, 300);
   });
 
-  // 공지사항 배너 클릭 시 알림 토스트
-  dom.btnNotice.addEventListener('click', () => {
+  dom.btnNotice?.addEventListener('click', () => {
     showToast(`${translations[currentLang].noticeTag} 공지사항 상세 화면으로 이동합니다.`);
-  });
-
-  // 8대 메뉴 클릭 시 햅틱 피드백 가상 동작 (토스트 노출)
-  const menuButtons = document.querySelectorAll('.menu-item, .btn-shop-reg');
-  menuButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const name = btn.querySelector('.menu-title, span').textContent;
-      showToast(`[${name}] 모듈로 진입합니다. (프로토타입 데모)`);
-    });
   });
 }
 
-// 7. 차트 갱신 로직 (마이크로 애니메이션 리셋 포함)
+// 차트 갱신 로직
 function updateChartData(affiliateKey) {
   const data = affiliateData[affiliateKey];
   if (!data) return;
-
-  // 텍스트 페이드 효과와 함께 값 갱신
   [dom.valLastYear, dom.valThisYear, dom.valThisMonth].forEach(el => {
-    el.style.transition = 'opacity 0.2s';
-    el.style.opacity = '0';
+    if (el) el.style.opacity = '0';
   });
-
   setTimeout(() => {
-    dom.valLastYear.textContent = data.lastYear;
-    dom.valThisYear.textContent = data.thisYear;
-    dom.valThisMonth.textContent = data.thisMonth;
-
+    if (dom.valLastYear) dom.valLastYear.textContent = data.lastYear;
+    if (dom.valThisYear) dom.valThisYear.textContent = data.thisYear;
+    if (dom.valThisMonth) dom.valThisMonth.textContent = data.thisMonth;
     [dom.valLastYear, dom.valThisYear, dom.valThisMonth].forEach(el => {
-      el.style.opacity = '1';
+      if (el) el.style.opacity = '1';
     });
   }, 200);
 
-  // 차트 바 리셋 후 부드러운 상승 애니메이션
-  resetAndAnimateBar(dom.fillLastYear, `${data.lastYear}%`);
-  resetAndAnimateBar(dom.fillThisYear, `${data.thisYear}%`);
-  resetAndAnimateBar(dom.fillThisMonth, `${data.thisMonth}%`);
+  if (dom.fillLastYear) resetAndAnimateBar(dom.fillLastYear, `${data.lastYear}%`);
+  if (dom.fillThisYear) resetAndAnimateBar(dom.fillThisYear, `${data.thisYear}%`);
+  if (dom.fillThisMonth) resetAndAnimateBar(dom.fillThisMonth, `${data.thisMonth}%`);
 }
 
 function resetAndAnimateBar(barElement, targetHeight) {
   barElement.style.animation = 'none';
-  barElement.offsetHeight; // Reflow 트리거
+  barElement.offsetHeight;
   barElement.style.setProperty('--target-height', targetHeight);
   barElement.style.animation = 'riseUp 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards';
 }
 
-// 8. 다국어 번역 제어
+// 다국어 번역
 function changeLanguage(lang) {
   currentLang = lang;
   const trans = translations[lang];
-
-  // 플래그 및 레이블 교체
-  if (lang === 'ko') {
-    dom.flagKor.textContent = '🇰🇷';
-    dom.langLabel.textContent = 'Korean';
-  } else {
-    dom.flagKor.textContent = '🇺🇸';
-    dom.langLabel.textContent = 'English';
+  if (dom.flagKor) dom.flagKor.textContent = lang === 'ko' ? '🇰🇷' : '🇺🇸';
+  if (dom.langLabel) dom.langLabel.textContent = lang === 'ko' ? 'Korean' : 'English';
+  if (dom.txtUserRole) dom.txtUserRole.textContent = trans.userRole;
+  if (dom.txtUserDept) dom.txtUserDept.textContent = trans.userDept;
+  if (dom.txtShopReg) dom.txtShopReg.textContent = trans.shopReg;
+  if (dom.txtMenuBuyer) dom.txtMenuBuyer.textContent = trans.menuBuyer;
+  if (dom.txtMenuFactory) dom.txtMenuFactory.textContent = trans.menuFactory;
+  if (dom.txtMenuInfo) dom.txtMenuInfo.textContent = trans.menuInfo;
+  if (dom.txtMenuTicket) dom.txtMenuTicket.textContent = trans.menuTicket;
+  if (dom.txtSuffix) dom.txtSuffix.textContent = trans.suffix;
+  dom.lblAverages?.forEach(el => el.textContent = trans.average);
+  if (dom.noticeTrack) {
+    dom.noticeTrack.innerHTML = `<span class="notice-tag">${trans.noticeTag}</span> <span class="notice-text">${trans.noticeText}</span>`;
   }
-
-  // 텍스트 노드 일괄 업데이트
-  dom.txtUserRole.textContent = trans.userRole;
-  dom.txtUserDept.textContent = trans.userDept;
-  dom.txtShopReg.textContent = trans.shopReg;
-  dom.txtMenuBuyer.textContent = trans.menuBuyer;
-  dom.txtMenuFactory.textContent = trans.menuFactory;
-  dom.txtMenuInfo.textContent = trans.menuInfo;
-  dom.txtMenuTicket.textContent = trans.menuTicket;
-  dom.txtSuffix.textContent = trans.suffix;
-
-  dom.lblAverages.forEach(el => {
-    el.textContent = trans.average;
-  });
-
-  // 공지사항 롤링 영역 변경
-  const noticeHtml = `<span class="notice-tag">${trans.noticeTag}</span> <span class="notice-text">${trans.noticeText}</span>`;
-  dom.noticeTrack.innerHTML = noticeHtml;
-
-  // 모달 텍스트
-  dom.modalEmptyText.textContent = trans.modalEmpty;
-  
-  // 모달 리스트 항목
-  const docTitles = dom.approvalList.querySelectorAll('.doc-title');
-  if (docTitles.length >= 2) {
-    docTitles[0].textContent = trans.doc1;
-    docTitles[1].textContent = trans.doc2;
-  }
-  dom.approvalList.querySelectorAll('.btn-action-approve').forEach(btn => {
-    btn.textContent = trans.btnApprove;
-  });
-
-  // 리셋 공지 애니메이션
+  if (dom.modalEmptyText) dom.modalEmptyText.textContent = trans.modalEmpty;
   setupNoticeAnimation();
 }
 
-// 9. 결재함 배지 카운트 업데이트
+// 결재 배지 제어
 function updateApprovalBadge() {
-  dom.approvalCount.textContent = pendingApprovalCount;
-  if (dom.sidebarApprovalCount) {
-    dom.sidebarApprovalCount.textContent = `${pendingApprovalCount}건`;
-  }
-  
+  if (dom.approvalCount) dom.approvalCount.textContent = pendingApprovalCount;
+  if (dom.sidebarApprovalCount) dom.sidebarApprovalCount.textContent = `${pendingApprovalCount}건`;
   if (pendingApprovalCount <= 0) {
-    dom.approvalCount.style.display = 'none';
+    if (dom.approvalCount) dom.approvalCount.style.display = 'none';
     if (dom.sidebarApprovalCount) {
       dom.sidebarApprovalCount.className = 'value text-green';
       dom.sidebarApprovalCount.textContent = translations[currentLang].modalEmpty.includes('reports') ? 'Clean' : '완료';
     }
   } else {
-    dom.approvalCount.style.display = 'flex';
-    if (dom.sidebarApprovalCount) {
-      dom.sidebarApprovalCount.className = 'value badge-red';
-    }
-    
-    // 배지 업데이트 시 통통 튀는 애니메이션 효과 부여
-    dom.approvalCount.classList.add('scale-pulse');
-    setTimeout(() => {
-      dom.approvalCount.classList.remove('scale-pulse');
-    }, 400);
-
-    // 모달 데이터 리스트 동기화
-    dom.modalEmptyText.style.display = 'none';
-    dom.approvalList.style.display = 'flex';
+    if (dom.approvalCount) dom.approvalCount.style.display = 'flex';
   }
 }
 
-// 10. 공지사항 텍스트 스크롤링 애니메이션 로직
+// 공지 애니메이션
 let noticeAnimFrame = null;
 function setupNoticeAnimation() {
-  if (noticeAnimFrame) {
-    cancelAnimationFrame(noticeAnimFrame);
-  }
-
-  const containerWidth = dom.btnNotice.querySelector('.notice-container').offsetWidth;
+  if (noticeAnimFrame) cancelAnimationFrame(noticeAnimFrame);
+  const container = dom.btnNotice?.querySelector('.notice-container');
+  if (!container || !dom.noticeTrack) return;
+  const containerWidth = container.offsetWidth;
   const trackWidth = dom.noticeTrack.offsetWidth;
-  
-  // 텍스트가 더 길어서 스크롤이 필요할 때만 애니메이션 작동
   if (trackWidth > containerWidth) {
     let position = containerWidth;
-    
-    function scroll() {
-      position -= 0.8; // 속도 조절
-      if (position < -trackWidth) {
-        position = containerWidth;
-      }
+    const scroll = () => {
+      position -= 0.8;
+      if (position < -trackWidth) position = containerWidth;
       dom.noticeTrack.style.transform = `translateX(${position}px)`;
       noticeAnimFrame = requestAnimationFrame(scroll);
-    }
-    
+    };
     scroll();
   } else {
     dom.noticeTrack.style.transform = 'translateX(0)';
   }
 }
 
-// 11. 토스트 메시지 출력
+// 토스트 메시지
 let toastTimeout = null;
 function showToast(message) {
+  if (!dom.toast) return;
   dom.toast.textContent = message;
   dom.toast.classList.add('show');
-  
-  if (toastTimeout) {
-    clearTimeout(toastTimeout);
-  }
-
-  toastTimeout = setTimeout(() => {
-    dom.toast.classList.remove('show');
-  }, 2500);
+  if (toastTimeout) clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => dom.toast.classList.remove('show'), 2500);
 }
 
-/* ==========================================
-   Buyer 평가 모듈 시뮬레이션 스크립트
-   ========================================== */
-
-// 12. Buyer 평가 모의 데이터 (Mock Database)
-
-// 기본 체크리스트 템플릿 생성 헬퍼 함수 (모든 문항 적합/부적합 2지선다로 구성)
-function createDefaultChecklist(status) {
-  const isPending = status === 'pending';
-  // 기본 판정 설정: 대기는 빈값, 적합 완료는 'fit', 부적합 완료는 특정 항목에 'unfit' 지정
-  const defaultResult = (id) => {
-    if (isPending) return '';
-    if (status === 'fit') return 'fit';
-    // unfit인 업체의 경우 특정 리스크 항목을 부적합으로 설정
-    if (id === 'C01' || id === 'C11') return 'unfit';
-    return 'fit';
-  };
-
-  return [
-    { id: "C01", category: "개인위생", item: "작업자 위생모/위생복/위생화 착용 및 청결 상태", desc: "조리 및 배식 종사자의 개인 위생 복장 착용 규정 준수 여부", result: defaultResult("C01") },
-    { id: "C02", category: "개인위생", item: "종사자 손 세척 및 소독 적정성", desc: "원료 취급 전, 화장실 사용 후 등 수시 손 세척/소독 준수 여부", result: defaultResult("C02") },
-    { id: "C03", category: "원료관리", item: "원부재료 입고 검사 및 신선도 상태", desc: "입고 검사 기록 작성 및 유통기한 경과 여부 확인", result: defaultResult("C03") },
-    { id: "C04", category: "원료관리", item: "식재료 보관 시 구분 보관 및 선입선출 이행", desc: "바닥 밀착 보관 금지, 농수축산물 및 가공품의 교차오염 방지 격리", result: defaultResult("C04") },
-    { id: "C05", category: "보관온도", item: "냉장/냉동고 온도 준수 및 온도계 정상 작동 여부", desc: "냉장 10℃ 이하, 냉동 -18℃ 이하 온도 관리 준수 기록", result: defaultResult("C05") },
-    { id: "C06", category: "공정관리", item: "교차오염 방지 조치 (도구 구분 사용)", desc: "칼, 도마, 식기 등의 용도별(육류/어류/채소류) 구분 사용 및 소독", result: defaultResult("C06") },
-    { id: "C07", category: "공정관리", item: "해동 식재료의 위생적 처리 및 재냉동 금지", desc: "유수해동 또는 냉장해동 기준 준수 및 해동 후 즉시 사용 여부", result: defaultResult("C07") },
-    { id: "C08", category: "환경위생", item: "작업장 세척/소독 상태 및 청결도", desc: "바닥, 벽, 배수구의 오물 제거 및 정기적인 소독제 소독 여부", result: defaultResult("C08") },
-    { id: "C09", category: "환경위생", item: "폐기물 용기 관리 및 위생적 밀폐 여부", desc: "폐기물 용기 뚜껑 비치 및 주기적인 배출 관리 상태", result: defaultResult("C09") },
-    { id: "C10", category: "표시사항", item: "원산지 및 알레르기 유발물질 정보 표시 적정성", desc: "고객 안내 메뉴판 또는 쇼케이스 내 법적 필수 표시사항 이행 여부", result: defaultResult("C10") },
-    { id: "C11", category: "법적준수", item: "조리 종사자 건강진단결과서(보건증) 유효 여부", desc: "현장 근무자 전원의 보건증 소지 및 유효기간 만료 여부 확인 (법적 필수)", result: defaultResult("C11") },
-    { id: "C12", category: "법적준수", item: "위생교육 수료증 보관 및 자체 위생교육 실시 기록", desc: "영업자 위생교육 및 매월 종사자 자체 교육 실시 기록 관리 여부", result: defaultResult("C12") },
-    { id: "C13", category: "방제위생", item: "작업장 내 해충(쥐, 바퀴벌레 등) 흔적 및 방제 상태", desc: "전문 방제업체 정기 점검 여부 및 서식 흔적 발견 여부", result: defaultResult("C13") },
-    { id: "C14", category: "설비안전", item: "정수 필터 교체 주기 준수 및 식수 적합 여부", desc: "제빙기 및 음용수 필터 최근 교체 일자 및 적합 판정 여부", result: defaultResult("C14") }
-  ];
-}
-
-const buyerMockData = [
-  { id: 1, buyerId: 'BUYER_DEPT_01', storeName: '본점 (소공점)', name: '주식회사 푸드링크', date: '2026-06-24', div: '농산', biz: '제조가공업', vhr: 'VHR', express: true, status: 'fit', checklist: createDefaultChecklist('fit'), photo: '', comment: '위생 복장 상태 양호하며 선도 우수함.' },
-  { id: 2, buyerId: 'BUYER_DEPT_02', storeName: '잠실점', name: '(주)대현수산', date: '2026-06-25', div: '수산', biz: '소분업', vhr: 'HR', express: false, status: 'pending', checklist: createDefaultChecklist('pending'), photo: '', comment: '' },
-  { id: 3, buyerId: 'BUYER_DEPT_03', storeName: '강남점', name: '영양축산푸드', date: '2026-06-23', div: '축산', biz: '제조가공업', vhr: 'R', express: true, status: 'unfit', checklist: createDefaultChecklist('unfit'), photo: '', comment: '보건증 유효기간 만료 근무자 1명 발견 및 온도 준수 불량.' },
-  { id: 4, buyerId: 'BUYER_DEPT_04', storeName: '영등포점', name: '롯데조리유통', date: '2026-06-18', div: '조리', biz: '유통업', vhr: 'VHR', express: false, status: 'fit', checklist: createDefaultChecklist('fit'), photo: '', comment: '식재료 선입선출 준수 및 도구 소독 철저.' },
-  { id: 5, buyerId: 'BUYER_DEPT_05', storeName: '노원점', name: '삼성그로서리', date: '2026-06-20', div: '그로서리', biz: '수입원', vhr: 'HR', express: false, status: 'fit', checklist: createDefaultChecklist('fit'), photo: '', comment: '해외 수입제품 표시 기준 준수 양호.' },
-  { id: 6, buyerId: 'BUYER_DEPT_06', storeName: '본점 (소공점)', name: '우리가공식품', date: '2026-06-15', div: '농산', biz: '제조가공업', vhr: 'R', express: true, status: 'fit', checklist: createDefaultChecklist('fit'), photo: '', comment: '작업장 세척상태 깔끔하고 정리정돈 양호.' },
-  { id: 7, buyerId: 'BUYER_DEPT_07', storeName: '인천점', name: '바다사랑수산', date: '2026-06-28', div: '수산', biz: '제조가공업', vhr: 'VHR', express: false, status: 'unfit', checklist: createDefaultChecklist('unfit'), photo: '', comment: '조리 도구 구분 사용 미비로 인한 교차오염 우려 지적.' },
-  { id: 8, buyerId: 'BUYER_DEPT_08', storeName: '김포공항점', name: '참조은축산', date: '2026-06-10', div: '축산', biz: '소분업', vhr: 'R', express: false, status: 'pending', checklist: createDefaultChecklist('pending'), photo: '', comment: '' },
-  { id: 9, buyerId: 'BUYER_DEPT_09', storeName: '건대스타시티점', name: '조리나라', date: '2026-06-12', div: '조리', biz: '제조가공업', vhr: 'HR', express: true, status: 'fit', checklist: createDefaultChecklist('fit'), photo: '', comment: '조리 완료 식품 온도 유지 상태 훌륭함.' },
-  { id: 10, buyerId: 'BUYER_DEPT_10', storeName: '미아점', name: '글로벌식품수입', date: '2026-06-05', div: '그로서리', biz: '수입원', vhr: 'VHR', express: false, status: 'pending', checklist: createDefaultChecklist('pending'), photo: '', comment: '' }
-];
-
-// 13. 바이어 평가 상태 변수
-let buyerActiveTab = 'all';
-let buyerFilters = {
-  dateStart: '2026-06-01',
-  dateEnd: '2026-06-30',
-  div: 'all',
-  biz: 'all',
-  vhrs: ['VHR', 'HR', 'R'],
-  expressOnly: false
-};
-
-// 14. Buyer 평가 모듈 초기화 함수
+// ==========================================
+// Buyer 평가 모듈 (껍데기 인터랙션)
+// ==========================================
 function initBuyerEval() {
   const btnBuyerMenu = document.getElementById('menu_buyer');
   const btnBackToHome = document.getElementById('btnBackToHome');
-  const btnOpenFilter = document.getElementById('btnOpenFilter');
-  const btnCloseFilter = document.getElementById('btnCloseFilter');
-  const btnFilterReset = document.getElementById('btnFilterReset');
-  const btnFilterApply = document.getElementById('btnFilterApply');
-  const tabItems = document.querySelectorAll('.tab-container .tab-item');
-
   const homeView = document.getElementById('home-view');
   const buyerEvalView = document.getElementById('buyer-eval-view');
-  const filterOverlay = document.getElementById('buyerFilterOverlay');
-
-  // 상세 보기 화면 관련 DOM 요소
   const buyerDetailView = document.getElementById('buyer-detail-view');
   const btnBackToEvalList = document.getElementById('btnBackToEvalList');
+  const btnOpenFilter = document.getElementById('btnOpenFilter');
+  const btnCloseFilter = document.getElementById('btnCloseFilter');
+  const filterOverlay = document.getElementById('buyerFilterOverlay');
   const btnDetailSaveDraft = document.getElementById('btnDetailSaveDraft');
   const btnDetailSubmitFinal = document.getElementById('btnDetailSubmitFinal');
   const detailImageInput = document.getElementById('detailImageInput');
 
-  if (!btnBuyerMenu) return;
+  const btnTabEval = document.getElementById('btn-tab-eval');
+  const btnTabCompany = document.getElementById('btn-tab-company');
+  const tabContentEval = document.getElementById('tab-content-eval');
+  const tabContentCompany = document.getElementById('tab-content-company');
 
-  // 메인 메뉴 클릭 시 Buyer 평가 화면으로 전환
-  btnBuyerMenu.addEventListener('click', (e) => {
-    e.stopPropagation(); // 기존 bindEvents의 가상 모듈 진입 토스트 실행 방지
-    homeView.style.display = 'none';
-    buyerEvalView.style.display = 'flex';
-    buyerDetailView.style.display = 'none';
+  btnBuyerMenu?.addEventListener('click', () => {
+    if (homeView) homeView.style.display = 'none';
+    if (buyerEvalView) buyerEvalView.style.display = 'flex';
+    if (buyerDetailView) buyerDetailView.style.display = 'none';
     
-    // 필터 기본 세팅 동기화 및 렌더링
-    syncFilterUI();
+    // 탭 상태 초기화
+    btnTabEval?.classList.add('active');
+    btnTabCompany?.classList.remove('active');
+    if (tabContentEval) tabContentEval.style.display = 'block';
+    if (tabContentCompany) tabContentCompany.style.display = 'none';
+    
     renderBuyerList();
   });
 
-  // 뒤로가기 버튼 클릭 시 홈 화면 복구
-  btnBackToHome.addEventListener('click', () => {
-    buyerEvalView.style.display = 'none';
-    homeView.style.display = 'flex';
-  });
-
-  // 필터 열기/닫기
-  btnOpenFilter.addEventListener('click', () => {
-    filterOverlay.classList.add('show');
-  });
-
-  btnCloseFilter.addEventListener('click', () => {
-    filterOverlay.classList.remove('show');
-  });
-
-  filterOverlay.addEventListener('click', (e) => {
-    if (e.target === filterOverlay) {
-      filterOverlay.classList.remove('show');
-    }
-  });
-
-  // 필터 리셋
-  btnFilterReset.addEventListener('click', () => {
-    document.getElementById('filterDateStart').value = '2026-06-01';
-    document.getElementById('filterDateEnd').value = '2026-06-30';
-    document.getElementById('filterDiv').value = 'all';
-    document.getElementById('filterBiz').value = 'all';
-    document.querySelectorAll('input[name="filterVhr"]').forEach(chk => chk.checked = true);
-    document.getElementById('filterExpress').checked = false;
-    showToast('필터가 초기화되었습니다.');
-  });
-
-  // 필터 적용
-  btnFilterApply.addEventListener('click', () => {
-    buyerFilters.dateStart = document.getElementById('filterDateStart').value;
-    buyerFilters.dateEnd = document.getElementById('filterDateEnd').value;
-    buyerFilters.div = document.getElementById('filterDiv').value;
-    buyerFilters.biz = document.getElementById('filterBiz').value;
-    
-    buyerFilters.vhrs = [];
-    document.querySelectorAll('input[name="filterVhr"]:checked').forEach(chk => {
-      buyerFilters.vhrs.push(chk.value);
-    });
-    
-    buyerFilters.expressOnly = document.getElementById('filterExpress').checked;
-
-    // 필터 활성화 배지 표시 여부 결정
-    const filterActiveDot = document.getElementById('filterActiveDot');
-    const isFilterActive = buyerFilters.div !== 'all' || 
-                           buyerFilters.biz !== 'all' || 
-                           buyerFilters.vhrs.length !== 3 || 
-                           buyerFilters.expressOnly ||
-                           buyerFilters.dateStart !== '2026-06-01' ||
-                           buyerFilters.dateEnd !== '2026-06-30';
-    
-    filterActiveDot.style.display = isFilterActive ? 'block' : 'none';
-
-    filterOverlay.classList.remove('show');
-    showToast('필터 조건이 적용되었습니다.');
+  btnTabEval?.addEventListener('click', () => {
+    btnTabEval.classList.add('active');
+    btnTabCompany?.classList.remove('active');
+    if (tabContentEval) tabContentEval.style.display = 'block';
+    if (tabContentCompany) tabContentCompany.style.display = 'none';
     renderBuyerList();
   });
 
-  // 구분 탭 스위칭
-  tabItems.forEach(tab => {
-    tab.addEventListener('click', () => {
-      tabItems.forEach(t => t.classList.remove('active'));
+  btnTabCompany?.addEventListener('click', () => {
+    btnTabCompany.classList.add('active');
+    btnTabEval?.classList.remove('active');
+    if (tabContentEval) tabContentEval.style.display = 'none';
+    if (tabContentCompany) tabContentCompany.style.display = 'block';
+    renderBuyerCompanyList();
+  });
+
+  const subTabs = document.querySelectorAll('.tab-container .tab-item');
+  subTabs.forEach(tab => {
+    tab.addEventListener('click', (e) => {
+      subTabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
-      buyerActiveTab = tab.getAttribute('data-tab');
+      buyerActiveTab = tab.getAttribute('data-tab') || 'all';
       renderBuyerList();
     });
   });
 
-  // 상세 보기에서 목록으로 뒤로가기
-  btnBackToEvalList.addEventListener('click', () => {
-    buyerDetailView.style.display = 'none';
-    buyerEvalView.style.display = 'flex';
-    renderBuyerList(); // 상태 변동 시 목록 갱신
+  btnBackToHome?.addEventListener('click', () => {
+    if (buyerEvalView) buyerEvalView.style.display = 'none';
+    if (homeView) homeView.style.display = 'flex';
   });
 
-  // 이미지 업로드 파일 변경 핸들러
-  detailImageInput.addEventListener('change', (e) => {
-    const files = Array.from(e.target.files);
-    if (!files.length || !activeDetailItem) return;
-
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const base64Img = event.target.result;
-        if (!activeDetailItem.photos) {
-          activeDetailItem.photos = [];
-        }
-        activeDetailItem.photos.push(base64Img);
-        renderPhotoPreviews(activeDetailItem.photos);
-      };
-      reader.readAsDataURL(file);
-    });
-    // 인풋 리셋
-    e.target.value = '';
+  btnOpenFilter?.addEventListener('click', () => filterOverlay?.classList.add('show'));
+  btnCloseFilter?.addEventListener('click', () => filterOverlay?.classList.remove('show'));
+  filterOverlay?.addEventListener('click', (e) => {
+    if (e.target === filterOverlay) filterOverlay.classList.remove('show');
   });
 
-  // 임시 저장 처리
-  btnDetailSaveDraft.addEventListener('click', () => {
-    if (!activeDetailItem) return;
-    
-    // 특이사항 코멘트 보존
-    activeDetailItem.comment = document.getElementById('detailCommentInput').value;
-    
+  document.getElementById('btnFilterApply')?.addEventListener('click', () => {
+    filterOverlay?.classList.remove('show');
+    showToast('필터 조건이 적용되었습니다. (시뮬레이션)');
+    renderBuyerList();
+  });
+
+  btnBackToEvalList?.addEventListener('click', () => {
+    if (buyerDetailView) buyerDetailView.style.display = 'none';
+    if (buyerEvalView) buyerEvalView.style.display = 'flex';
+  });
+
+  detailImageInput?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      showToast(`사진 "${file.name}"이 임시 첨부되었습니다.`);
+      const grid = document.getElementById('uploadPreviewGrid');
+      if (grid) {
+        grid.innerHTML = `<div class="preview-thumb"><img src="image_20afcc.png" alt="현장 사진 미리보기"><button class="btn-del-thumb" onclick="this.parentElement.remove()">&times;</button></div>`;
+      }
+    }
+  });
+
+  btnDetailSaveDraft?.addEventListener('click', () => {
     showToast('평가 내용이 임시 저장되었습니다.');
   });
 
-  // 최종 제출 완료 처리
-  btnDetailSubmitFinal.addEventListener('click', () => {
-    if (!activeDetailItem) return;
-
-    const checklist = activeDetailItem.checklist;
-
-    // 1) 모든 문항에 대한 평가 완료 여부 검증 (미완료 항목 발견 시 차단)
-    const hasEmpty = checklist.some(c => c.result === '');
-    if (hasEmpty) {
-      showToast('평가하지 않은 항목이 있습니다. 모든 항목을 평가해 주세요.');
-      return;
-    }
-
-    // 특이사항 코멘트 최종 저장
-    activeDetailItem.comment = document.getElementById('detailCommentInput').value;
-
-    // 2) 최종 적합/부적합 자동 판정
-    const hasUnfit = checklist.some(c => c.result === 'unfit');
-    const finalVerdict = hasUnfit ? 'unfit' : 'fit';
-    
-    // 업체의 최종 상태 갱신
-    activeDetailItem.status = finalVerdict;
-
-    // 최종 데이터 제출 처리 (콘솔 로깅 명세 준수)
-    const submitData = {
-      buyerId: activeDetailItem.buyerId,
-      storeName: activeDetailItem.storeName,
-      companyId: activeDetailItem.id,
-      companyName: activeDetailItem.name,
-      division: activeDetailItem.div,
-      businessType: activeDetailItem.biz,
-      vhrType: activeDetailItem.vhr,
-      assessmentDate: new Date().toISOString().split('T')[0],
-      isExpress: activeDetailItem.express,
-      finalVerdict: finalVerdict === 'fit' ? '최종 적합' : '최종 부적합',
-      checklist: activeDetailItem.checklist,
-      comment: activeDetailItem.comment,
-      photoCount: activeDetailItem.photos ? activeDetailItem.photos.length : 0
-    };
-
-    console.log('--- [롯데백화점 상품 안전성 최종 평가 제출 데이터 (Pass/Fail)] ---');
-    console.log(JSON.stringify(submitData, null, 2));
-
+  btnDetailSubmitFinal?.addEventListener('click', () => {
     showToast('최종 평가서 제출이 완료되었습니다.');
-
-    // 화면 복귀 및 목록 리프레시
+    if (activeBuyerItem) activeBuyerItem.status = 'fit';
     setTimeout(() => {
-      buyerDetailView.style.display = 'none';
-      buyerEvalView.style.display = 'flex';
+      if (buyerDetailView) buyerDetailView.style.display = 'none';
+      if (buyerEvalView) buyerEvalView.style.display = 'flex';
       renderBuyerList();
     }, 500);
   });
-}
 
-// 현재 활성화되어 점검 중인 업체 객체 홀더
-let activeDetailItem = null;
-
-// 15. 필터 UI 데이터 동기화
-function syncFilterUI() {
-  document.getElementById('filterDateStart').value = buyerFilters.dateStart;
-  document.getElementById('filterDateEnd').value = buyerFilters.dateEnd;
-  document.getElementById('filterDiv').value = buyerFilters.div;
-  document.getElementById('filterBiz').value = buyerFilters.biz;
-  
-  document.querySelectorAll('input[name="filterVhr"]').forEach(chk => {
-    chk.checked = buyerFilters.vhrs.includes(chk.value);
+  document.getElementById('btnDetailEdit')?.addEventListener('click', () => {
+    setBuyerDetailMode(false);
   });
-  
-  document.getElementById('filterExpress').checked = buyerFilters.expressOnly;
+
+  document.getElementById('btnDetailSendReport')?.addEventListener('click', () => {
+    const sendModal = document.getElementById('sendReportModal');
+    if (sendModal) sendModal.classList.add('show');
+  });
+
+  document.getElementById('btnCloseSendModal')?.addEventListener('click', () => {
+    const sendModal = document.getElementById('sendReportModal');
+    if (sendModal) sendModal.classList.remove('show');
+  });
+
+  document.getElementById('sendReportModal')?.addEventListener('click', (e) => {
+    const sendModal = document.getElementById('sendReportModal');
+    if (e.target === sendModal) {
+      sendModal.classList.remove('show');
+    }
+  });
+
+  document.getElementById('btnSendEmailSubmit')?.addEventListener('click', () => {
+    const emailInput = document.getElementById('inputSendEmail');
+    const email = emailInput ? emailInput.value.trim() : '';
+    if (!email) {
+      showToast('이메일 주소를 입력해 주세요.');
+      return;
+    }
+    showToast(`"${email}" 주소로 결과 보고서가 정상 발송되었습니다.`);
+    const sendModal = document.getElementById('sendReportModal');
+    if (sendModal) sendModal.classList.remove('show');
+  });
+
+  document.getElementById('btnDetailDownloadExcel')?.addEventListener('click', () => {
+    showToast('엑셀 보고서 다운로드가 시작되었습니다.');
+  });
+
+  // 이미지 팝업 슬라이더 전역 변수
+  let popupImages = [];
+  let popupCurrentIndex = 0;
+
+  function updatePopupSlide() {
+    const popupImg = document.getElementById('popupTargetImage');
+    const prevBtn = document.getElementById('btnPopupPrev');
+    const nextBtn = document.getElementById('btnPopupNext');
+    const bulletsContainer = document.getElementById('popupBullets');
+
+    if (!popupImg) return;
+    popupImg.src = popupImages[popupCurrentIndex];
+
+    const isMulti = popupImages.length > 1;
+    if (prevBtn) prevBtn.style.display = isMulti ? 'flex' : 'none';
+    if (nextBtn) nextBtn.style.display = isMulti ? 'flex' : 'none';
+    if (bulletsContainer) bulletsContainer.style.display = isMulti ? 'flex' : 'none';
+
+    if (bulletsContainer && isMulti) {
+      bulletsContainer.innerHTML = popupImages.map((_, idx) => `
+        <span class="popup-bullet ${idx === popupCurrentIndex ? 'active' : ''}" data-idx="${idx}"></span>
+      `).join('');
+    }
+  }
+
+  // 이미지 팝업 모달 이벤트 위임 바인딩
+  buyerDetailView?.addEventListener('click', (e) => {
+    if (e.target.tagName === 'IMG' && (e.target.closest('#uploadPreviewGrid') || e.target.closest('.preview-thumb') || e.target.classList.contains('clickable-item-thumb'))) {
+      const popupModal = document.getElementById('imagePopupModal');
+      if (popupModal) {
+        const parent = e.target.closest('#uploadPreviewGrid') || e.target.closest('.item-photo-grid') || e.target.closest('.preview-thumb')?.parentNode;
+        if (parent) {
+          const imgs = Array.from(parent.querySelectorAll('img'));
+          popupImages = imgs.map(img => img.src);
+          popupCurrentIndex = imgs.indexOf(e.target);
+          if (popupCurrentIndex === -1) popupCurrentIndex = 0;
+        } else {
+          popupImages = [e.target.src];
+          popupCurrentIndex = 0;
+        }
+        updatePopupSlide();
+        popupModal.classList.add('show');
+      }
+    }
+    // 개별 문항의 가상 파일명 링크 클릭 시 확대 팝업 연동
+    if (e.target.classList.contains('clickable-photo-status')) {
+      const popupModal = document.getElementById('imagePopupModal');
+      const qid = e.target.getAttribute('data-qid');
+      if (popupModal && qid) {
+        const imgMap = {
+          'C01': 'https://picsum.photos/id/43/400/300',
+          'C02': 'https://picsum.photos/id/48/400/300',
+          'C03': 'https://picsum.photos/id/53/400/300'
+        };
+        const src = imgMap[qid] || 'https://picsum.photos/id/10/400/300';
+        popupImages = [src];
+        popupCurrentIndex = 0;
+        updatePopupSlide();
+        popupModal.classList.add('show');
+      }
+    }
+  });
+
+  // 슬라이드 네비게이션 클릭 이벤트 등록
+  document.getElementById('btnPopupPrev')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (popupImages.length <= 1) return;
+    popupCurrentIndex = (popupCurrentIndex - 1 + popupImages.length) % popupImages.length;
+    updatePopupSlide();
+  });
+
+  document.getElementById('btnPopupNext')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (popupImages.length <= 1) return;
+    popupCurrentIndex = (popupCurrentIndex + 1) % popupImages.length;
+    updatePopupSlide();
+  });
+
+  document.getElementById('popupBullets')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (e.target.classList.contains('popup-bullet')) {
+      const idx = parseInt(e.target.getAttribute('data-idx'));
+      if (!isNaN(idx)) {
+        popupCurrentIndex = idx;
+        updatePopupSlide();
+      }
+    }
+  });
+
+  document.getElementById('btnCloseImagePopup')?.addEventListener('click', () => {
+    const popupModal = document.getElementById('imagePopupModal');
+    if (popupModal) popupModal.classList.remove('show');
+  });
+
+  document.getElementById('imagePopupModal')?.addEventListener('click', (e) => {
+    const popupModal = document.getElementById('imagePopupModal');
+    if (e.target === popupModal) {
+      popupModal.classList.remove('show');
+    }
+  });
 }
 
-// 16. Buyer 평가 리스트 동적 렌더링
 function renderBuyerList() {
-  const listContainer = document.getElementById('buyerEvalList');
-  if (!listContainer) return;
-
-  listContainer.innerHTML = '';
-
-  // 필터링 적용
+  const container = document.getElementById('buyerEvalList');
+  if (!container) return;
+  container.innerHTML = '';
+  
   const filtered = buyerMockData.filter(item => {
-    // 1) 상태 탭 필터링
-    if (buyerActiveTab === 'fit' && item.status !== 'fit') return false;
-    if (buyerActiveTab === 'unfit' && item.status !== 'unfit') return false;
-    
-    // 2) 날짜 범위 필터링
-    if (item.date < buyerFilters.dateStart || item.date > buyerFilters.dateEnd) return false;
-    
-    // 3) 사업부 필터링
-    if (buyerFilters.div !== 'all' && item.div !== buyerFilters.div) return false;
-    
-    // 4) 업태 필터링
-    if (buyerFilters.biz !== 'all' && item.biz !== buyerFilters.biz) return false;
-    
-    // 5) VHR유형 복수선택 필터링
-    if (!buyerFilters.vhrs.includes(item.vhr)) return false;
-    
-    // 6) Express 긴급 여부 필터링
-    if (buyerFilters.expressOnly && !item.express) return false;
-
-    return true;
+    if (buyerActiveTab === 'all') return true;
+    return item.status === buyerActiveTab;
   });
 
-  // 데이터가 비었을 때 빈 화면 렌더링
   if (filtered.length === 0) {
-    listContainer.innerHTML = `
-      <div class="list-empty">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="12" y1="8" x2="12" y2="12"></line>
-          <line x1="12" y1="16" x2="12.01" y2="16"></line>
-        </svg>
-        <p>조회 조건에 부합하는 평가 결과가 없습니다.</p>
+    container.innerHTML = `
+      <div class="list-empty" style="text-align: center; padding: 40px 20px; color: #64748b;">
+        <p>해당 상태의 평가 결과가 없습니다.</p>
       </div>
     `;
     return;
   }
 
-  // 카드 렌더링
   filtered.forEach(item => {
     const card = document.createElement('div');
     card.className = 'eval-card';
-    
-    let statusText = '대기';
-    let statusClass = 'badge-pending';
-    if (item.status === 'fit') {
-      statusText = '적합';
-      statusClass = 'badge-fit';
-    } else if (item.status === 'unfit') {
-      statusText = '부적합';
-      statusClass = 'badge-unfit';
-    }
-
-    const expressBadge = item.express ? `<span class="eval-badge badge-express">Express</span>` : '';
-
+    const statusText = item.status === 'fit' ? '적합' : item.status === 'unfit' ? '부적합' : '대기';
+    const statusClass = item.status === 'fit' ? 'badge-fit' : item.status === 'unfit' ? 'badge-unfit' : 'badge-pending';
     card.innerHTML = `
       <div class="card-header-row">
         <h4 class="card-title">${item.name}</h4>
         <div class="card-badges">
-          ${expressBadge}
+          ${item.express ? `<span class="eval-badge badge-express">Express</span>` : ''}
           <span class="eval-badge ${statusClass}">${statusText}</span>
         </div>
       </div>
       <div class="card-info-grid">
-        <div class="info-field">
-          <span class="lbl">사업부 (Div.)</span>
-          <span class="val">${item.div}</span>
-        </div>
-        <div class="info-field">
-          <span class="lbl">업태</span>
-          <span class="val">${item.biz}</span>
-        </div>
-        <div class="info-field">
-          <span class="lbl">VHR 유형</span>
-          <span class="val">${item.vhr}</span>
-        </div>
-        <div class="info-field">
-          <span class="lbl">평가 등록일</span>
-          <span class="val">${item.date}</span>
-        </div>
+        <div class="info-field"><span class="lbl">사업부 (Div.)</span><span class="val">${item.div}</span></div>
+        <div class="info-field"><span class="lbl">업태</span><span class="val">${item.biz}</span></div>
+        <div class="info-field"><span class="lbl">VHR 유형</span><span class="val">${item.vhr}</span></div>
+        <div class="info-field"><span class="lbl">평가 등록일</span><span class="val">${item.date}</span></div>
       </div>
     `;
-
-    // 카드 개별 클릭 이벤트: 상세 보기로 진입
-    card.addEventListener('click', () => {
-      openBuyerDetail(item);
-    });
-
-    listContainer.appendChild(card);
+    card.addEventListener('click', () => openBuyerDetail(item));
+    container.appendChild(card);
   });
 }
 
-// 17. 상세 평가 뷰 열기 및 화면 그리기
-function openBuyerDetail(item) {
-  activeDetailItem = item;
+function renderBuyerCompanyList() {
+  const container = document.getElementById('buyerCompanyList');
+  if (!container) return;
+  container.innerHTML = '';
   
-  // 뷰 스위칭
-  document.getElementById('buyer-eval-view').style.display = 'none';
-  document.getElementById('buyer-detail-view').style.display = 'flex';
+  buyerMockData.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'eval-card';
+    card.style.cursor = 'pointer';
+    const statusText = item.status === 'fit' ? '적합' : item.status === 'unfit' ? '부적합' : '대기';
+    const statusClass = item.status === 'fit' ? 'badge-fit' : item.status === 'unfit' ? 'badge-unfit' : 'badge-pending';
+    card.innerHTML = `
+      <div class="card-header-row">
+        <h4 class="card-title">${item.name}</h4>
+        <div class="card-badges">
+          ${item.express ? `<span class="eval-badge badge-express">Express</span>` : ''}
+          <span class="eval-badge ${statusClass}">${statusText}</span>
+        </div>
+      </div>
+      <div class="card-info-grid">
+        <div class="info-field"><span class="lbl">사업부 (Div.)</span><span class="val">${item.div}</span></div>
+        <div class="info-field"><span class="lbl">업태</span><span class="val">${item.biz}</span></div>
+        <div class="info-field"><span class="lbl">VHR 유형</span><span class="val">${item.vhr}</span></div>
+        <div class="info-field"><span class="lbl">평가 등록일</span><span class="val">${item.date}</span></div>
+      </div>
+    `;
+    card.addEventListener('click', () => openBuyerDetail(item));
+    container.appendChild(card);
+  });
+}
 
-  // 상단 업체 정보 배너 렌더링
+function openBuyerDetail(item) {
+  activeBuyerItem = item;
+  const buyerEvalView = document.getElementById('buyer-eval-view');
+  const buyerDetailView = document.getElementById('buyer-detail-view');
+  if (buyerEvalView) buyerEvalView.style.display = 'none';
+  if (buyerDetailView) buyerDetailView.style.display = 'flex';
+
   document.getElementById('detail-company-name').textContent = item.name;
   document.getElementById('detail-vhr-type').textContent = item.vhr;
   document.getElementById('detail-div').textContent = item.div;
   document.getElementById('detail-biz').textContent = item.biz;
   document.getElementById('detail-store-name').textContent = item.storeName;
   document.getElementById('detail-buyer-id').textContent = item.buyerId;
-
-  // 특이사항 의견 기기입값 바인딩
   document.getElementById('detailCommentInput').value = item.comment || '';
+  
+  // VHR 유형 텍스트 및 점검자/피점검자 연동
+  const vhrTypeText = document.getElementById('detail-vhr-type-text');
+  if (vhrTypeText) vhrTypeText.textContent = item.vhr;
 
-  // 사진 첨부 목록 렌더링
-  if (!item.photos) item.photos = [];
-  renderPhotoPreviews(item.photos);
+  const inspectorEl = document.getElementById('detail-inspector');
+  if (inspectorEl) inspectorEl.textContent = '김바이어 (BUYER_DEPT_01)';
 
-  // 체크리스트 문항 분류 및 렌더링
-  renderChecklistQuestions(item.checklist);
+  const managerInput = document.getElementById('detailManagerInput');
+  if (managerInput) {
+    managerInput.value = item.manager || (item.status !== 'pending' ? '홍길동 과장' : '');
+  }
+  
 
-  // 실시간 합계 점수/등급 초기 렌더링
-  updateRealtimeDisplay(item.checklist);
+
+  const grid = document.getElementById('uploadPreviewGrid');
+  if (grid) grid.innerHTML = '';
+
+  // status가 pending이 아니면(fit/unfit 이면) 조회 전용 모드로 설정
+  if (item.status && item.status !== 'pending') {
+    setBuyerDetailMode(true);
+  } else {
+    setBuyerDetailMode(false);
+  }
 }
 
-// 18. 체크리스트 문항 그리기 (전 문항 적합/부적합 2지선다로 렌더링)
-function renderChecklistQuestions(checklist) {
+function setBuyerDetailMode(readOnly) {
+  isBuyerDetailReadOnly = readOnly;
+  
+  const detailView = document.getElementById('buyer-detail-view');
+  if (detailView) {
+    if (readOnly) {
+      detailView.classList.add('view-only-mode');
+    } else {
+      detailView.classList.remove('view-only-mode');
+    }
+  }
+  
+  const titleEl = document.getElementById('txt-buyer-detail-title');
+  const draftActions = document.getElementById('detail-actions-draft');
+  const completedActions = document.getElementById('detail-actions-completed');
+  const commentInput = document.getElementById('detailCommentInput');
+  const managerInput = document.getElementById('detailManagerInput');
+  const fileInputLabel = document.querySelector('.upload-trigger-zone');
+  const grid = document.getElementById('uploadPreviewGrid');
+
+  if (titleEl) {
+    titleEl.textContent = readOnly ? '상세 평가 결과 조회' : (activeBuyerItem?.status === 'pending' ? '상세 평가 등록' : '상세 평가 수정');
+  }
+  
+  if (draftActions) draftActions.style.display = readOnly ? 'none' : 'flex';
+  if (completedActions) completedActions.style.display = readOnly ? 'flex' : 'none';
+  
+  if (commentInput) {
+    commentInput.disabled = readOnly;
+  }
+
+  if (managerInput) {
+    managerInput.disabled = readOnly;
+  }
+  
+  // 하단 [현장 점검 사진 첨부] 영역 플레이스홀더 분기 처리
+  if (fileInputLabel && grid) {
+    if (readOnly) {
+      fileInputLabel.style.pointerEvents = 'none';
+      fileInputLabel.style.opacity = '0.6';
+      
+      if (activeBuyerItem && activeBuyerItem.status !== 'pending') {
+        // 첨부 이미지가 있는 경우: 카메라 아이콘 숨기고 썸네일만 전면에 그리드로 노출
+        fileInputLabel.style.display = 'none';
+        grid.style.display = 'grid';
+        
+        const count = activeBuyerItem.status === 'unfit' ? 2 : 1;
+        let thumbsHtml = '';
+        for (let i = 1; i <= count; i++) {
+          thumbsHtml += `
+            <div class="preview-thumb" style="position: relative; width: 70px; height: 70px; border-radius: 8px; overflow: hidden; border: 1px solid #cbd5e1;">
+              <img src="https://picsum.photos/id/${10 + i}/150/150" alt="가상 점검 사진 ${i}" style="width: 100%; height: 100%; object-fit: cover;">
+              <button class="btn-del-thumb" style="position: absolute; top: 4px; right: 4px; width: 18px; height: 18px; border-radius: 50%; background: rgba(15, 23, 42, 0.75); border: none; color: #ffffff; font-size: 11px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10;">&times;</button>
+            </div>
+          `;
+        }
+        grid.innerHTML = thumbsHtml;
+      } else {
+        // 첨부 이미지가 없는 경우: 카메라 아이콘 유지, 플레이스홀더 문구 출력
+        fileInputLabel.style.display = 'flex';
+        grid.style.display = 'none';
+        grid.innerHTML = '';
+        const txtSpan = fileInputLabel.querySelector('span');
+        if (txtSpan) txtSpan.textContent = '등록된 현장 점검 이미지가 없습니다.';
+      }
+    } else {
+      // 수정 모드일 때: 카메라 노출, 기존 이미지 썸네일 보임 및 삭제(X) 아이콘 연동
+      fileInputLabel.style.display = 'flex';
+      fileInputLabel.style.pointerEvents = 'auto';
+      fileInputLabel.style.opacity = '1';
+      grid.style.display = 'grid';
+      
+      const txtSpan = fileInputLabel.querySelector('span');
+      if (txtSpan) txtSpan.textContent = '현장 사진 추가 (직접 촬영/파일 선택)';
+      
+      if (activeBuyerItem && activeBuyerItem.status !== 'pending') {
+        const count = activeBuyerItem.status === 'unfit' ? 2 : 1;
+        let thumbsHtml = '';
+        for (let i = 1; i <= count; i++) {
+          thumbsHtml += `
+            <div class="preview-thumb" style="position: relative; width: 70px; height: 70px; border-radius: 8px; overflow: hidden; border: 1px solid #cbd5e1;">
+              <img src="https://picsum.photos/id/${10 + i}/150/150" alt="가상 점검 사진 ${i}" style="width: 100%; height: 100%; object-fit: cover;">
+              <button class="btn-del-thumb" style="position: absolute; top: 4px; right: 4px; width: 18px; height: 18px; border-radius: 50%; background: rgba(15, 23, 42, 0.75); border: none; color: #ffffff; font-size: 11px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10;">&times;</button>
+            </div>
+          `;
+        }
+        grid.innerHTML = thumbsHtml;
+        
+        // 삭제 아이콘 클릭 이벤트 연동
+        grid.querySelectorAll('.btn-del-thumb').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const thumb = btn.closest('.preview-thumb');
+            thumb.style.transition = 'all 0.2s';
+            thumb.style.opacity = '0';
+            thumb.style.transform = 'scale(0.8)';
+            setTimeout(() => {
+              thumb.remove();
+              showToast('선택한 점검 이미지가 삭제되었습니다.');
+            }, 200);
+          });
+        });
+      } else {
+        grid.innerHTML = '';
+      }
+    }
+  }
+
+  // 체크리스트 다시 그리기
+  renderChecklistQuestions();
+  
+  // 실시간 판정 상태 업데이트
+  const verdictEl = document.getElementById('realtime-final-verdict');
+  if (verdictEl && activeBuyerItem) {
+    if (activeBuyerItem.status === 'fit') {
+      verdictEl.textContent = '최종 적합';
+      verdictEl.className = 'val-verdict verdict-fit';
+    } else if (activeBuyerItem.status === 'unfit') {
+      verdictEl.textContent = '최종 부적합';
+      verdictEl.className = 'val-verdict verdict-unfit';
+    } else {
+      verdictEl.textContent = '판정 대기';
+      verdictEl.className = 'val-verdict verdict-pending';
+    }
+  }
+}
+
+function renderChecklistQuestions() {
   const container = document.getElementById('checklistQuestions');
   if (!container) return;
-
   container.innerHTML = '';
-  let index = 1;
+  
+  const dummyQuestions = [
+    { id: 'C01', item: '작업자 위생모/위생복/위생화 착용 및 청결 상태', desc: '위생 복장 착용 규정 준수 여부' },
+    { id: 'C02', item: '종사자 손 세척 및 소독 적정성', desc: '원료 취급 전 손 세척/소독 준수 여부' },
+    { id: 'C03', item: '원부재료 입고 검사 및 신선도 상태', desc: '입고 유통기한 경과 여부 확인' }
+  ];
 
-  checklist.forEach(question => {
+  dummyQuestions.forEach((q, idx) => {
     const card = document.createElement('div');
     card.className = 'inspect-card';
 
-    const isFitActive = question.result === 'fit' ? 'active' : '';
-    const isUnfitActive = question.result === 'unfit' ? 'active' : '';
+    let initialResult = '';
+    let initialMemo = '';
+    let hasPhoto = false;
+
+    if (activeBuyerItem) {
+      if (activeBuyerItem.status === 'fit') {
+        initialResult = 'fit';
+        initialMemo = '특이사항 없음. 점검 기준 충족 및 위생 복장 양호 확인.';
+        hasPhoto = idx === 0; // 예시 데이터로 첫번째 문항은 사진 가상 매핑
+      } else if (activeBuyerItem.status === 'unfit') {
+        initialResult = idx === 0 ? 'unfit' : 'fit';
+        if (idx === 0) {
+          initialMemo = '일부 종사자 위생모 미착용 및 귀걸이 장신구 착용 적발. 즉시 시정 조치.';
+          hasPhoto = true; // 첫 부적합 문항은 가상 증빙 사진 매핑
+        } else {
+          initialMemo = '손 소독 관리 대장 및 소독기 정상 작동 확인.';
+        }
+      }
+    }
+    
+    const isFitActive = initialResult === 'fit' ? 'active' : '';
+    const isUnfitActive = initialResult === 'unfit' ? 'active' : '';
 
     card.innerHTML = `
-      <div class="inspect-card-header">
-        <span class="item-num">점검 항목 ${index++}</span>
-        <h5 class="item-title">${question.item}</h5>
-        <p class="item-desc">${question.desc}</p>
+      <div class="inspect-card-header" style="position: relative;">
+        <span class="item-num">점검 항목 ${idx + 1}</span>
+        <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+          <h5 class="item-title" style="margin: 0;">${q.item}</h5>
+          <button class="btn-help-guide" data-qid="${q.id}" style="background: #e2e8f0; border: none; width: 16px; height: 16px; border-radius: 50%; cursor: pointer; color: #475569; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; font-family: sans-serif; transition: all 0.2s;" title="도움말 확인">?</button>
+        </div>
+        <p class="item-desc" style="margin-top: 4px;">${q.desc}</p>
       </div>
-      <div class="binary-control" data-qid="${question.id}">
-        <button class="binary-btn btn-fit ${isFitActive}" data-result="fit">
-          <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-          적합
-        </button>
-        <button class="binary-btn btn-unfit ${isUnfitActive}" data-result="unfit">
-          <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
-          부적합
+      <div class="binary-control" data-qid="${q.id}">
+        <button class="binary-btn btn-fit ${isFitActive}" data-result="fit">적합</button>
+        <button class="binary-btn btn-unfit ${isUnfitActive}" data-result="unfit">부적합</button>
+      </div>
+      
+      <!-- 상세 문항별 개별 사진 첨부 및 메모 영역 (다수 첨부 지원형 구성) -->
+      <div class="inspect-card-extra" style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #e2e8f0; display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap; gap: 8px;">
+          <button class="btn-item-photo" data-qid="${q.id}" ${isBuyerDetailReadOnly ? 'disabled' : ''} style="height: 30px; padding: 0 10px; font-size: 12px; font-weight: 600; color: #475569; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 12px; height: 12px;">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+            사진 추가
+          </button>
+          <span class="item-photo-guide" style="font-size: 11px; color: #94a3b8; font-weight: 500; display: ${isBuyerDetailReadOnly ? 'none' : 'inline'};">* JPG, PNG (최대 5MB)</span>
+        </div>
+        
+        <!-- 개별 문항 첨부 이미지 목록 그리드 -->
+        <div class="item-photo-title" style="font-size: 11px; color: #64748b; font-weight: 600; margin-bottom: 2px; display: ${hasPhoto && isBuyerDetailReadOnly ? 'block' : 'none'};">첨부된 이미지 (${hasPhoto ? 2 : 0})</div>
+        <div class="item-photo-grid" data-qid="${q.id}" style="display: ${hasPhoto ? 'flex' : 'none'}; gap: 8px; flex-wrap: wrap; margin-top: 4px;"></div>
+        
+        <textarea class="item-memo-input input-form" data-qid="${q.id}" placeholder="상세 내용 및 항목별 메모 입력" style="height: 48px; padding: 6px 10px; font-size: 12.5px; border-radius: 6px; border: 1px solid #cbd5e1; resize: none; width: 100%;" ${isBuyerDetailReadOnly ? 'disabled' : ''}>${initialMemo}</textarea>
+      </div>
+    `;
+
+    const helpBtn = card.querySelector('.btn-help-guide');
+    helpBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showToast(`[점검 기준] ${q.item}: ${q.desc}`);
+    });
+
+    const photoBtn = card.querySelector('.btn-item-photo');
+    const photoGrid = card.querySelector('.item-photo-grid');
+
+    const updateItemPhotoTitle = () => {
+      const titleEl = card.querySelector('.item-photo-title');
+      if (titleEl) {
+        const count = photoGrid ? photoGrid.querySelectorAll('.item-thumb-wrapper').length : 0;
+        titleEl.textContent = `첨부된 이미지 (${count})`;
+        titleEl.style.display = (count > 0 && isBuyerDetailReadOnly) ? 'block' : 'none';
+      }
+    };
+
+    // 가상으로 다수 이미지 리스트 세팅
+    if (hasPhoto && photoGrid) {
+      const count = 2; // 가상 다수 사진 예시
+      let gridHtml = '';
+      for (let i = 1; i <= count; i++) {
+        gridHtml += `
+          <div class="item-thumb-wrapper" style="position: relative; width: 70px; height: 70px; border-radius: 8px; overflow: hidden; border: 1px solid #cbd5e1;">
+            <img src="https://picsum.photos/id/${15 + i}/150/150" alt="점검 증빙 사진 ${i}" class="clickable-item-thumb" data-qid="${q.id}" style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;">
+            <button class="btn-del-item-thumb" style="position: absolute; top: 4px; right: 4px; width: 18px; height: 18px; border-radius: 50%; background: rgba(15, 23, 42, 0.75); border: none; color: #ffffff; font-size: 11px; display: ${isBuyerDetailReadOnly ? 'none' : 'flex'}; align-items: center; justify-content: center; cursor: pointer; z-index: 5;">&times;</button>
+          </div>
+        `;
+      }
+      photoGrid.innerHTML = gridHtml;
+      photoGrid.style.display = 'flex';
+      updateItemPhotoTitle();
+      
+      // 수정 모드일 때 개별 삭제 바인딩
+      if (!isBuyerDetailReadOnly) {
+        photoGrid.querySelectorAll('.btn-del-item-thumb').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const thumbWrap = btn.closest('.item-thumb-wrapper');
+            thumbWrap.style.transition = 'all 0.2s';
+            thumbWrap.style.opacity = '0';
+            thumbWrap.style.transform = 'scale(0.8)';
+            setTimeout(() => {
+              thumbWrap.remove();
+              showToast('문항 증빙 사진이 삭제되었습니다.');
+              updateItemPhotoTitle();
+              if (photoGrid.querySelectorAll('.item-thumb-wrapper').length === 0) {
+                photoGrid.style.display = 'none';
+              }
+            }, 200);
+          });
+        });
+      }
+    }
+
+    if (isBuyerDetailReadOnly) {
+      if (photoBtn) {
+        photoBtn.style.pointerEvents = 'none';
+        photoBtn.style.opacity = '0.5';
+      }
+    } else {
+      photoBtn?.addEventListener('click', () => {
+        showToast(`[${q.item}] 항목에 사진이 정상 첨부되었습니다.`);
+        if (photoGrid) {
+          photoGrid.style.display = 'flex';
+          const newIdx = photoGrid.querySelectorAll('.item-thumb-wrapper').length + 1;
+          const newThumb = document.createElement('div');
+          newThumb.className = 'item-thumb-wrapper';
+          newThumb.style.cssText = 'position: relative; width: 70px; height: 70px; border-radius: 8px; overflow: hidden; border: 1px solid #cbd5e1;';
+          newThumb.innerHTML = `
+            <img src="https://picsum.photos/id/${20 + newIdx}/150/150" alt="점검 증빙 사진" class="clickable-item-thumb" data-qid="${q.id}" style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;">
+            <button class="btn-del-item-thumb" style="position: absolute; top: 4px; right: 4px; width: 18px; height: 18px; border-radius: 50%; background: rgba(15, 23, 42, 0.75); border: none; color: #ffffff; font-size: 11px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 5;">&times;</button>
+          `;
+          
+          newThumb.querySelector('.btn-del-item-thumb').addEventListener('click', (e) => {
+            e.stopPropagation();
+            newThumb.style.transition = 'all 0.2s';
+            newThumb.style.opacity = '0';
+            newThumb.style.transform = 'scale(0.8)';
+            setTimeout(() => {
+              newThumb.remove();
+              showToast('문항 증빙 사진이 삭제되었습니다.');
+              updateItemPhotoTitle();
+              if (photoGrid.querySelectorAll('.item-thumb-wrapper').length === 0) {
+                photoGrid.style.display = 'none';
+              }
+            }, 200);
+          });
+          photoGrid.appendChild(newThumb);
+          updateItemPhotoTitle();
+        }
+      });
+    }
+
+    const control = card.querySelector('.binary-control');
+    if (isBuyerDetailReadOnly) {
+      control.style.pointerEvents = 'none';
+      control.style.opacity = '0.7';
+    }
+
+    card.querySelectorAll('.binary-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        if (isBuyerDetailReadOnly) return;
+        card.querySelectorAll('.binary-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        
+        const finalVerdict = btn.getAttribute('data-result') === 'unfit' ? 'unfit' : 'fit';
+        const verdict = document.getElementById('realtime-final-verdict');
+        if (verdict) {
+          if (finalVerdict === 'unfit') {
+            verdict.textContent = '최종 부적합';
+            verdict.className = 'val-verdict verdict-unfit';
+          } else {
+            verdict.textContent = '최종 적합';
+            verdict.className = 'val-verdict verdict-fit';
+          }
+        }
+      });
+    });
+    container.appendChild(card);
+  });
+}
+
+// ==========================================
+// 제조사 현장 평가 모듈 (껍데기 인터랙션)
+// ==========================================
+function initMfrEval() {
+  const menuFactory = document.getElementById('menu_factory');
+  const btnMfrBackToHome = document.getElementById('btnMfrBackToHome');
+  const homeView = document.getElementById('home-view');
+  const mfrEvalView = document.getElementById('mfr-eval-view');
+  const mfrRegisterView = document.getElementById('mfr-register-view');
+  const mfrDetailView = document.getElementById('mfr-detail-view');
+  const btnMfrHeaderAdd = document.getElementById('btnMfrHeaderAdd');
+  const btnMfrBackToEvalFromReg = document.getElementById('btnMfrBackToEvalFromReg');
+  const btnMfrSubmitRegister = document.getElementById('btnMfrSubmitRegister');
+  const btnMfrSaveDraft = document.getElementById('btnMfrSaveDraft');
+  
+  menuFactory?.addEventListener('click', () => {
+    if (homeView) homeView.style.display = 'none';
+    if (mfrEvalView) mfrEvalView.style.display = 'flex';
+    switchMfrTab('eval');
+  });
+
+  btnMfrBackToHome?.addEventListener('click', () => {
+    if (mfrEvalView) mfrEvalView.style.display = 'none';
+    if (homeView) homeView.style.display = 'flex';
+  });
+
+  const btnMfrTabEval = document.getElementById('btn-mfr-tab-eval');
+  const btnMfrTabCompany = document.getElementById('btn-mfr-tab-company');
+  btnMfrTabEval?.addEventListener('click', () => switchMfrTab('eval'));
+  btnMfrTabCompany?.addEventListener('click', () => switchMfrTab('company'));
+
+  function switchMfrTab(tabType) {
+    const evalContent = document.getElementById('mfr-tab-content-eval');
+    const companyContent = document.getElementById('mfr-tab-content-company');
+    if (tabType === 'eval') {
+      btnMfrTabEval?.classList.add('active');
+      btnMfrTabCompany?.classList.remove('active');
+      if (evalContent) evalContent.style.display = 'block';
+      if (companyContent) companyContent.style.display = 'none';
+      renderMfrEvalList();
+    } else {
+      btnMfrTabEval?.classList.remove('active');
+      btnMfrTabCompany?.classList.add('active');
+      if (evalContent) evalContent.style.display = 'none';
+      if (companyContent) companyContent.style.display = 'block';
+      renderMfrCompanyList();
+    }
+  }
+
+  btnMfrHeaderAdd?.addEventListener('click', () => {
+    if (mfrEvalView) mfrEvalView.style.display = 'none';
+    if (mfrRegisterView) mfrRegisterView.style.display = 'flex';
+    document.getElementById('txt-mfr-register-title').textContent = '신규 제조사 등록';
+    if (btnMfrSubmitRegister) btnMfrSubmitRegister.dataset.mode = 'new';
+    document.getElementById('mfrRegOemSubSection').style.display = 'flex';
+    bindBuyerCompaniesToMfrSelect();
+  });
+
+  btnMfrBackToEvalFromReg?.addEventListener('click', () => {
+    if (mfrRegisterView) mfrRegisterView.style.display = 'none';
+    if (mfrEvalView) mfrEvalView.style.display = 'flex';
+  });
+
+  const mfrRegTypeRadios = document.querySelectorAll('input[name="mfrRegType"]');
+  mfrRegTypeRadios.forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      const oemSection = document.getElementById('mfrRegOemSubSection');
+      if (oemSection) oemSection.style.display = e.target.value === 'OEM' ? 'flex' : 'none';
+    });
+  });
+
+  btnMfrSubmitRegister?.addEventListener('click', () => {
+    showToast('제조사 등록이 완료되었습니다.');
+    if (mfrRegisterView) mfrRegisterView.style.display = 'none';
+    if (mfrEvalView) mfrEvalView.style.display = 'flex';
+    switchMfrTab('company');
+  });
+
+  btnMfrSaveDraft?.addEventListener('click', () => {
+    showToast('제조사 프로필이 임시 저장되었습니다.');
+    if (mfrRegisterView) mfrRegisterView.style.display = 'none';
+    if (mfrEvalView) mfrEvalView.style.display = 'flex';
+    switchMfrTab('company');
+  });
+
+  document.getElementById('btnMfrBackToEvalList')?.addEventListener('click', () => {
+    if (mfrDetailView) mfrDetailView.style.display = 'none';
+    if (mfrEvalView) mfrEvalView.style.display = 'flex';
+  });
+
+  document.getElementById('mfrEvalFileInput')?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      document.getElementById('txtMfrEvalFile').textContent = file.name;
+      showToast(`평가 서류 "${file.name}"이 첨부되었습니다.`);
+    }
+  });
+
+  document.getElementById('mfrActionFileInput')?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      document.getElementById('txtMfrActionFile').textContent = file.name;
+      showToast(`개선 조치 보고서 "${file.name}"이 첨부되었습니다.`);
+    }
+  });
+
+  document.getElementById('btnMfrDetailSaveDraft')?.addEventListener('click', () => {
+    showToast('임시 저장되었습니다.');
+  });
+
+  document.getElementById('btnMfrDetailSubmitFinal')?.addEventListener('click', () => {
+    showToast('현장 평가 결과 제출이 완료되었습니다.');
+    if (mfrDetailView) mfrDetailView.style.display = 'none';
+    if (mfrEvalView) mfrEvalView.style.display = 'flex';
+  });
+}
+
+function bindBuyerCompaniesToMfrSelect() {
+  const selectPartner = document.getElementById('mfrRegPartner');
+  if (!selectPartner) return;
+  selectPartner.innerHTML = '<option value="" disabled selected>거래업체 선택</option>';
+  buyerMockData.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.name;
+    opt.textContent = `${c.name} (${c.storeName})`;
+    selectPartner.appendChild(opt);
+  });
+}
+
+function renderMfrEvalList() {
+  const container = document.getElementById('mfrEvalList');
+  if (!container) return;
+  container.innerHTML = '';
+  
+  mfrMockData.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'eval-card';
+    const statusText = item.status === 'fit' ? '적합' : item.status === 'unfit' ? '부적합' : '평가 대기';
+    const statusClass = item.status === 'fit' ? 'badge-fit' : item.status === 'unfit' ? 'badge-unfit' : 'badge-pending';
+    card.innerHTML = `
+      <div class="card-header-row">
+        <h4 class="card-title">${item.name}</h4>
+        <div class="card-badges">
+          <span class="eval-badge ${item.type === 'OEM' ? 'badge-express' : 'badge-start-eval'}">${item.type}</span>
+          <span class="eval-badge ${statusClass}">${statusText}</span>
+        </div>
+      </div>
+      <div class="card-info-grid">
+        <div class="info-field"><span class="lbl">사업부 (Div.)</span><span class="val">${item.div}</span></div>
+        <div class="info-field"><span class="lbl">VHR 유형</span><span class="val">${item.vhr}</span></div>
+        <div class="info-field"><span class="lbl">점검일자</span><span class="val">${item.regDate}</span></div>
+        <div class="info-field"><span class="lbl">점검자</span><span class="val">${item.inspector}</span></div>
+      </div>
+    `;
+    card.addEventListener('click', () => openMfrDetail(item));
+    container.appendChild(card);
+  });
+}
+
+function renderMfrCompanyList() {
+  const container = document.getElementById('mfrCompanyList');
+  if (!container) return;
+  container.innerHTML = '';
+
+  mfrMockData.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'mfr-card';
+    card.innerHTML = `
+      <div class="card-header-row">
+        <h4 class="card-title" style="font-size:15px; font-weight:700;">${item.name}</h4>
+        <span class="badge ${item.type === 'OEM' ? 'status-pending' : 'status-completed'}">${item.type} 제조사</span>
+      </div>
+      <div class="card-info-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:4px;">
+        <div class="info-field"><span class="lbl">사업부 (Div.)</span><span class="val">${item.div}</span></div>
+        <div class="info-field"><span class="lbl">업태</span><span class="val">${item.biz}</span></div>
+        <div class="info-field"><span class="lbl">VHR 유형</span><span class="val">${item.vhr}</span></div>
+        <div class="info-field"><span class="lbl">최초등록일</span><span class="val">${item.regDate}</span></div>
+      </div>
+      <div class="mfr-card-actions">
+        <button class="btn-mfr-action-edit" data-id="${item.id}">정보 수정</button>
+        <button class="btn-mfr-action-eval" data-id="${item.id}">현장 평가</button>
+      </div>
+    `;
+    card.querySelector('.btn-mfr-action-edit').addEventListener('click', (e) => {
+      e.stopPropagation();
+      openMfrProfileEdit(item);
+    });
+    card.querySelector('.btn-mfr-action-eval').addEventListener('click', (e) => {
+      e.stopPropagation();
+      openMfrDetail(item);
+    });
+    container.appendChild(card);
+  });
+}
+
+function openMfrProfileEdit(item) {
+  if (activeMfrItem) activeMfrItem = item;
+  const mfrEvalView = document.getElementById('mfr-eval-view');
+  const mfrRegisterView = document.getElementById('mfr-register-view');
+  if (mfrEvalView) mfrEvalView.style.display = 'none';
+  if (mfrRegisterView) mfrRegisterView.style.display = 'flex';
+  
+  document.getElementById('txt-mfr-register-title').textContent = '제조사 정보 수정';
+  document.getElementById('mfrRegName').value = item.name;
+  document.getElementById('mfrRegDiv').value = item.div;
+  document.getElementById('mfrRegBiz').value = item.biz;
+  document.getElementById('mfrRegInspector').value = item.inspector;
+}
+
+function openMfrDetail(item) {
+  activeMfrItem = item;
+  const mfrEvalView = document.getElementById('mfr-eval-view');
+  const mfrDetailView = document.getElementById('mfr-detail-view');
+  if (mfrEvalView) mfrEvalView.style.display = 'none';
+  if (mfrDetailView) mfrDetailView.style.display = 'flex';
+
+  document.getElementById('mfr-detail-company-select-wrapper').style.display = 'none';
+  document.getElementById('mfr-detail-company-name-wrapper').style.display = 'block';
+  document.getElementById('mfrDetailSummaryCard').style.display = 'block';
+  document.getElementById('mfrInspectionSection').style.display = 'flex';
+  document.getElementById('mfrDetailVerdictBar').style.display = 'flex';
+
+  document.getElementById('mfrDetailCompanyNameText').textContent = item.name;
+  document.getElementById('lblMfrDetailDiv').textContent = item.div;
+  document.getElementById('lblMfrDetailBiz').textContent = item.biz;
+  document.getElementById('lblMfrDetailVhr').textContent = item.vhr;
+  document.getElementById('lblMfrDetailInspector').textContent = item.inspector;
+
+  renderMfrChecklistQuestions();
+}
+
+function renderMfrChecklistQuestions() {
+  const container = document.getElementById('mfrChecklistQuestions');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const dummyQuestions = [
+    { id: '1', category: '위생관리', item: '작업장 세척 소독 및 청결 상태 유지' },
+    { id: '2', category: '보관관리', item: '보관 창고 온도 모니터링 적정성' }
+  ];
+
+  dummyQuestions.forEach(q => {
+    const card = document.createElement('div');
+    card.className = 'question-card';
+    card.innerHTML = `
+      <div class="question-header">
+        <div class="q-title-row">
+          <span class="q-num">${q.id}</span>
+          <span class="q-category">[${q.category}]</span>
+        </div>
+        <p class="q-item-text" style="font-size: 13px; font-weight: 600; color: #0f172a; margin: 4px 0 0 0;">${q.item}</p>
+      </div>
+      <div class="question-body">
+        <div class="scoring-toggle-buttons">
+          <button class="btn-score btn-score-fit">적합</button>
+          <button class="btn-score btn-score-unfit">부적합</button>
+        </div>
+        <button class="btn-item-detail-page" style="margin-top:10px; width:100%; height:36px; border:1px dashed #cbd5e1; background:#fff; color:#475569; font-size:12px; cursor:pointer;">
+          상세 내용 및 사진 추가
         </button>
       </div>
     `;
 
-    // 적합/부적합 버튼 이벤트 바인딩
-    card.querySelectorAll('.binary-btn').forEach(btn => {
+    card.querySelectorAll('.btn-score').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        const resultBtn = e.target.closest('.binary-btn');
-        const result = resultBtn.getAttribute('data-result');
-        question.result = result;
-
-        // 비주얼 클래스 토글
-        card.querySelectorAll('.binary-btn').forEach(b => b.classList.remove('active'));
-        resultBtn.classList.add('active');
-
-        // 실시간 점수 판정 업데이트
-        updateRealtimeDisplay(checklist);
+        card.querySelectorAll('.btn-score').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        const badge = document.getElementById('mfrVerdictBadge');
+        if (badge) {
+          badge.textContent = '최종 적합';
+          badge.className = 'badge verdict-badge badge-fit';
+        }
       });
+    });
+
+    card.querySelector('.btn-item-detail-page').addEventListener('click', () => {
+      const detailRegView = document.getElementById('mfr-item-detail-view');
+      const mfrDetailView = document.getElementById('mfr-detail-view');
+      if (mfrDetailView) mfrDetailView.style.display = 'none';
+      if (detailRegView) detailRegView.style.display = 'flex';
+      
+      document.getElementById('mfrItemRegCategory').textContent = q.category;
+      document.getElementById('mfrItemRegTitle').textContent = q.item;
+      document.getElementById('mfrItemRegComment').value = '';
+      
+      const grid = document.getElementById('mfrItemRegPreviewGrid');
+      if (grid) grid.innerHTML = '';
     });
 
     container.appendChild(card);
   });
 }
 
-// 19. 최종 적합/부적합 자동 판정 알고리즘
-function calculateFinalVerdict(checklist) {
-  // 1) 미평가 항목이 존재하는 경우 -> 판정 대기
-  const hasEmpty = checklist.some(c => c.result === '');
-  if (hasEmpty) {
-    return { verdict: 'pending', label: '판정 대기', className: 'verdict-pending' };
-  }
+// 제조사 문항별 상세 입력 닫기 및 저장
+document.getElementById('btnMfrBackToDetailFromItem')?.addEventListener('click', () => {
+  document.getElementById('mfr-item-detail-view').style.display = 'none';
+  document.getElementById('mfr-detail-view').style.display = 'flex';
+});
 
-  // 2) 단 하나라도 부적합이 있는 경우 -> 최종 부적합
-  const hasUnfit = checklist.some(c => c.result === 'unfit');
-  if (hasUnfit) {
-    return { verdict: 'unfit', label: '최종 부적합', className: 'verdict-unfit' };
-  }
+document.getElementById('btnMfrSaveItemDetails')?.addEventListener('click', () => {
+  showToast('상세 내용이 저장되었습니다.');
+  document.getElementById('mfr-item-detail-view').style.display = 'none';
+  document.getElementById('mfr-detail-view').style.display = 'flex';
+});
 
-  // 3) 모든 항목이 적합한 경우 -> 최종 적합
-  return { verdict: 'fit', label: '최종 적합', className: 'verdict-fit' };
+document.getElementById('mfrItemRegImageInput')?.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    showToast(`사진 "${file.name}"이 임시 첨부되었습니다.`);
+    const grid = document.getElementById('mfrItemRegPreviewGrid');
+    if (grid) {
+      grid.innerHTML = `<div class="preview-thumb"><img src="image_20afcc.png" alt="현장 사진 미리보기"><button class="btn-del-thumb" onclick="this.parentElement.remove()">&times;</button></div>`;
+    }
+  }
+});
+
+
+let previousMasterSearchViewId = 'buyer-register-view';
+
+function openMasterSearch(type, prevId, title) {
+  currentSearchType = type;
+  previousMasterSearchViewId = prevId;
+  const masterSearchPageTitle = document.getElementById('master-search-page-title');
+  const masterSearchView = document.getElementById('master-search-view');
+  const masterSearchInput = document.getElementById('masterSearchInput');
+
+  if (masterSearchPageTitle) masterSearchPageTitle.textContent = title;
+  
+  const allViews = ['home-view', 'buyer-eval-view', 'buyer-detail-view', 'buyer-register-view', 'mfr-eval-view', 'mfr-register-view'];
+  allViews.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+
+  if (masterSearchView) masterSearchView.style.display = 'flex';
+  if (masterSearchInput) masterSearchInput.value = '';
+  renderMasterSearchCards();
 }
 
-// 20. 실시간 화면 최종 판정 배너 업데이트
-function updateRealtimeDisplay(checklist) {
-  const { label, className } = calculateFinalVerdict(checklist);
-  const verdictEl = document.getElementById('realtime-final-verdict');
+function initMasterSearch() {
+  const btnBuyerSearchMaster = document.getElementById('btnBuyerSearchMaster');
+  const btnMfrSearchMaster = document.getElementById('btnMfrSearchMaster');
+  const masterSearchView = document.getElementById('master-search-view');
+  const btnBackFromMasterSearch = document.getElementById('btnBackFromMasterSearch');
+  const masterSearchPageTitle = document.getElementById('master-search-page-title');
+  const masterSearchInput = document.getElementById('masterSearchInput');
+  const tabSearchCompany = document.getElementById('tabSearchCompany');
+  const tabRegisterCompany = document.getElementById('tabRegisterCompany');
+  const searchTabContent = document.getElementById('searchTabContent');
+  const registerTabContent = document.getElementById('registerTabContent');
+  const btnCreateNewMasterPage = document.getElementById('btnCreateNewMasterPage');
+  
+  let previousViewId = 'buyer-register-view';
 
-  if (verdictEl) {
-    verdictEl.textContent = label;
-    verdictEl.className = 'val-verdict';
-    verdictEl.classList.add(className);
-  }
-}
-
-// 21. 사진 첨부 미리보기 영역 렌더링
-function renderPhotoPreviews(photos) {
-  const previewGrid = document.getElementById('uploadPreviewGrid');
-  if (!previewGrid) return;
-
-  previewGrid.innerHTML = '';
-
-  photos.forEach((src, index) => {
-    const thumb = document.createElement('div');
-    thumb.className = 'preview-thumb';
-    thumb.innerHTML = `
-      <img src="${src}" alt="현장 사진 미리보기">
-      <button class="btn-del-thumb" data-index="${index}">&times;</button>
-    `;
-
-    // 사진 삭제 이벤트 바인딩
-    thumb.querySelector('.btn-del-thumb').addEventListener('click', (e) => {
-      e.stopPropagation();
-      photos.splice(index, 1);
-      renderPhotoPreviews(photos);
+  const openSearch = (type, prevId, title) => {
+    currentSearchType = type;
+    previousViewId = prevId;
+    if (masterSearchPageTitle) masterSearchPageTitle.textContent = title;
+    
+    const allViews = ['home-view', 'buyer-eval-view', 'buyer-detail-view', 'buyer-register-view', 'mfr-eval-view', 'mfr-register-view'];
+    allViews.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
     });
 
-    previewGrid.appendChild(thumb);
+    if (masterSearchView) masterSearchView.style.display = 'flex';
+    if (masterSearchInput) masterSearchInput.value = '';
+    renderMasterSearchCards();
+  };
+
+  btnBuyerSearchMaster?.addEventListener('click', () => openSearch('buyer', 'buyer-register-view', '[바이어 평가] 신규 업체 등록'));
+  btnMfrSearchMaster?.addEventListener('click', () => openSearch('mfr', 'mfr-register-view', '[제조사 현장평가] 신규 업체 등록'));
+
+  btnBackFromMasterSearch?.addEventListener('click', () => {
+    if (masterSearchView) masterSearchView.style.display = 'none';
+    const prev = document.getElementById(previousViewId);
+    if (prev) prev.style.display = 'flex';
+  });
+
+  tabSearchCompany?.addEventListener('click', () => {
+    tabSearchCompany.classList.add('active');
+    tabRegisterCompany?.classList.remove('active');
+    if (searchTabContent) searchTabContent.style.display = 'flex';
+    if (registerTabContent) registerTabContent.style.display = 'none';
+  });
+
+  tabRegisterCompany?.addEventListener('click', () => {
+    tabRegisterCompany.classList.add('active');
+    tabSearchCompany?.classList.remove('active');
+    if (searchTabContent) searchTabContent.style.display = 'none';
+    if (registerTabContent) registerTabContent.style.display = 'flex';
+  });
+
+  masterSearchInput?.addEventListener('input', () => renderMasterSearchCards());
+
+  // 중복확인 단추들 (껍데기화: 무조건 통과 피드백 표시)
+  document.getElementById('btnCheckMasterName')?.addEventListener('click', () => {
+    const feedback = document.getElementById('nameCheckFeedback');
+    if (feedback) {
+      feedback.textContent = '사용 가능한 업체명입니다. (확인 완료)';
+      feedback.className = 'success';
+    }
+    showToast('업체명 중복 검사 완료');
+    isNameChecked = true;
+  });
+
+  document.getElementById('btnCheckMasterLicense')?.addEventListener('click', () => {
+    const feedback = document.getElementById('licenseCheckFeedback');
+    if (feedback) {
+      feedback.textContent = '사용 가능한 사업자등록번호입니다. (확인 완료)';
+      feedback.className = 'success';
+    }
+    showToast('사업자등록번호 중복 검사 완료');
+    isLicenseChecked = true;
+  });
+
+  btnCreateNewMasterPage?.addEventListener('click', () => {
+    const name = document.getElementById('newMasterName').value.trim();
+    if (!name) {
+      showToast('신규 업체명을 입력해 주세요.');
+      return;
+    }
+    showToast(`신규 업체 "${name}" 등록이 완료되었습니다.`);
+    
+    // 자동 맵핑 처리
+    const prefix = currentSearchType === 'buyer' ? 'reg' : 'mfrReg';
+    const nameInput = document.getElementById(prefix + 'CompanyName') || document.getElementById('mfrRegName');
+    
+    if (nameInput) nameInput.value = name;
+    
+    if (masterSearchView) masterSearchView.style.display = 'none';
+    const prev = document.getElementById(previousViewId);
+    if (prev) prev.style.display = 'flex';
+  });
+
+  // 임시저장 버튼 리스너 연동
+  document.getElementById('btnCreateNewMasterDraft')?.addEventListener('click', () => {
+    const name = document.getElementById('newMasterName').value.trim();
+    if (!name) {
+      showToast('임시 저장할 업체명을 최소 한 글자 이상 입력해 주세요.');
+      return;
+    }
+    showToast(`"${name}" 업체 등록 정보가 임시 저장되었습니다.`);
+  });
+
+  // 업태/VHR 유형 라벨 우측 도움말 가이드 (?) 클릭 연동
+  masterSearchView?.addEventListener('click', (e) => {
+    if (e.target.classList.contains('btn-info-badge')) {
+      e.stopPropagation();
+      const title = e.target.getAttribute('title') || '안내';
+      if (title.includes('업태')) {
+        showToast('[업태 분류 기준] 제조가공업 / 소분업 / 유통업 / 수입원 구분에 따른 기준 가이드라인입니다.');
+      } else if (title.includes('VHR')) {
+        showToast('[VHR 수준 기준] 위해 수준 및 유해 물질 등급에 따른 VHR(고위험), HR(중위험), R(일반) 분류 규격입니다.');
+      }
+    }
   });
 }
+
+function renderMasterSearchCards() {
+  const grid = document.getElementById('masterSearchCardGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  
+  const searchInput = document.getElementById('masterSearchInput');
+  const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+  
+  const filteredList = companyMasterList.filter(c => {
+    if (!query) return true;
+    const nameMatch = c.name.toLowerCase().includes(query);
+    const cleanLicense = c.licenseNo.replace(/[^0-9]/g, '');
+    const cleanQuery = query.replace(/[^0-9]/g, '');
+    const licenseMatch = c.licenseNo.toLowerCase().includes(query) || (cleanQuery !== '' && cleanLicense.includes(cleanQuery));
+    return nameMatch || licenseMatch;
+  });
+
+  if (filteredList.length === 0) {
+    grid.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; color: #94a3b8; font-size: 13.5px;">
+        검색 결과와 일치하는 업체가 없습니다.
+      </div>
+    `;
+    return;
+  }
+  
+  filteredList.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'master-company-card';
+    card.style.padding = '12px 16px';
+    card.innerHTML = `
+      <span class="card-badge badge-vhr" style="top: 12px; right: 16px;">${c.vhr}</span>
+      <h4 class="card-company-name" style="margin: 0 0 6px 0; font-size: 14px; font-weight: 800;">${c.name}</h4>
+      <div class="card-info-row" style="font-size: 11px; color: #64748b;">
+        <span>사업자번호: <strong>${c.licenseNo}</strong></span>
+      </div>
+    `;
+    card.addEventListener('click', () => {
+      const prefix = currentSearchType === 'buyer' ? 'reg' : 'mfrReg';
+      const nameInput = document.getElementById(prefix + 'CompanyName') || document.getElementById('mfrRegName');
+      const licenseInput = document.getElementById(prefix + 'License') || document.getElementById('mfrRegLicense');
+      
+      if (nameInput) nameInput.value = c.name;
+      if (licenseInput) licenseInput.value = c.licenseNo;
+
+      const masterSearchView = document.getElementById('master-search-view');
+      const prev = document.getElementById(currentSearchType === 'buyer' ? 'buyer-register-view' : 'mfr-register-view');
+      
+      if (masterSearchView) masterSearchView.style.display = 'none';
+      if (prev) prev.style.display = 'flex';
+      showToast(`"${c.name}" 정보가 입력 폼에 맵핑되었습니다.`);
+    });
+    grid.appendChild(card);
+  });
+}
+
+// 8대 메뉴 클릭 시 햅틱 피드백 가상 동작 (토스트 노출) - 바이어/제조사를 제외한 메뉴들
+const menuButtons = document.querySelectorAll('.menu-item, .btn-shop-reg');
+menuButtons.forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    const id = btn.id;
+    if (id === 'menu_buyer' || id === 'menu_factory') return;
+    const name = btn.querySelector('.menu-title, span')?.textContent || '모듈';
+    showToast(`[${name}] 모듈로 진입합니다. (프로토타입 데모)`);
+  });
+});
+
+// 바이어 평가 헤더 플러스 버튼 클릭 -> 마스터 검색 뷰 열기
+document.getElementById('btnHeaderAdd')?.addEventListener('click', () => {
+  openMasterSearch('buyer', 'buyer-eval-view', '[바이어 평가] 신규 업체 등록');
+  
+  const regCompanyName = document.getElementById('regCompanyName');
+  if (regCompanyName) regCompanyName.value = '';
+  const regLicense = document.getElementById('regLicense');
+  if (regLicense) regLicense.value = '';
+});
+
+// 바이어 등록 뒤로가기
+document.getElementById('btnBackToEvalFromReg')?.addEventListener('click', () => {
+  const regView = document.getElementById('buyer-register-view');
+  if (regView) regView.style.display = 'none';
+  const evalView = document.getElementById('buyer-eval-view');
+  if (evalView) evalView.style.display = 'flex';
+});
 
 // 초기화 시작
 document.addEventListener('DOMContentLoaded', init);
 window.addEventListener('resize', setupNoticeAnimation);
 
+// 즉시 실행 (HMR 핫리로드 발생 시 DOMContentLoaded가 다시 실행되지 않는 상황 보완)
+if (document.readyState === 'interactive' || document.readyState === 'complete') {
+  init();
+}
