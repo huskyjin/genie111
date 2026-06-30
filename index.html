@@ -288,33 +288,26 @@
             </div>
           </header>
 
-          <!-- 메인 대형 탭바 (평가 리스트 / 등록 업체 리스트) -->
-          <div class="main-tab-bar" style="display: none;">
-            <button class="main-tab-item active" id="btn-tab-eval">평가 리스트</button>
-            <button class="main-tab-item" id="btn-tab-company">등록 업체 리스트</button>
+          <!-- 메인 대형 탭바 (평가 관리 / 업체 관리) -->
+          <div class="main-tab-bar" style="display: flex;">
+            <button class="main-tab-item active" id="btn-tab-eval">평가 관리</button>
+            <button class="main-tab-item" id="btn-tab-company">업체 관리</button>
           </div>
 
           <!-- Buyer 평가 콘텐츠 컨테이너 -->
           <div class="buyer-content">
             
-            <!-- Tab A: 평가 리스트 -->
+            <!-- Tab A: 평가 관리 -->
             <div id="tab-content-eval" class="tab-content-pane">
-              <!-- 구분 탭 (전체 / 적합 / 부적합) -->
-              <div class="tab-container">
-                <button class="tab-item active" data-tab="all" id="tab-all">전체</button>
-                <button class="tab-item" data-tab="fit" id="tab-fit">적합</button>
-                <button class="tab-item" data-tab="unfit" id="tab-unfit">부적합</button>
-              </div>
-
-              <!-- 평가 결과 리스트 카드 목록 -->
+              <!-- 평가 결과 리스트 카드 목록 (기존 평가 리스트) -->
               <div class="buyer-eval-list" id="buyerEvalList">
                 <!-- JS 동적 렌더링 또는 초기 데이터 로딩 -->
               </div>
             </div>
 
-            <!-- Tab B: 등록 업체 리스트 -->
+            <!-- Tab B: 업체 관리 -->
             <div id="tab-content-company" class="tab-content-pane" style="display: none;">
-              <!-- 등록 업체 카드 목록 -->
+              <!-- 평가 대상 업체 카드 목록 (기존 등록 업체 리스트) -->
               <div class="buyer-company-list" id="buyerCompanyList">
                 <!-- JS 동적 렌더링 -->
               </div>
@@ -739,7 +732,7 @@
                 <label class="chk-item chk-express-item">
                   <input type="checkbox" id="regExpress" value="Express">
                   <span class="chk-box"></span>
-                  <strong>Express 긴급 요청건으로 등록</strong>
+                  <strong>Express 긴급 요청건으로 등록 <span id="expressCountBadge" style="font-size: 11.5px; font-weight: 700; color: #ef4444; margin-left: 6px; background: #fee2e2; padding: 2px 8px; border-radius: 6px;">(잔여 5회 / 월 5회)</span></strong>
                 </label>
               </div>
 
@@ -1439,6 +1432,130 @@
           <div class="detail-scoring-panel" id="masterRegisterActionsBar" style="position: absolute; bottom: 0; left: 0; width: 100%; z-index: 50; background: #ffffff; border-top: 1px solid #e2e8f0; padding: 16px 20px; box-shadow: 0 -4px 16px rgba(0,0,0,0.08); display: none; gap: 8px; box-sizing: border-box; border-bottom-left-radius: 47px; border-bottom-right-radius: 47px; flex-direction: row !important;">
             <button type="button" class="btn-scoring-draft" id="btnCreateNewMasterDraft" style="flex: 1; height: 50px !important; cursor: pointer; border: none; font-size: 13.5px; font-weight: 600; border-radius: 12px; transition: all 0.2s;">임시저장</button>
             <button type="button" class="btn-scoring-submit" id="btnCreateNewMasterPage" style="flex: 2; height: 50px !important; margin-top: 0 !important; cursor: pointer; border: none; font-size: 13.5px; font-weight: 600; border-radius: 12px; transition: all 0.2s;">신규 업체 등록 및 자동 선택</button>
+          </div>
+        </div>
+
+        <!-- [독립 뷰] 평가 관리 전용: 업체 검색 및 즉석 평가 등록 뷰 페이지 -->
+        <div id="eval-master-search-view" class="view-container" style="display: none; flex-direction: column; height: 100%; overflow: hidden; position: relative; background: #f8fafc; padding: 0 !important;">
+          <!-- 고정 헤더 -->
+          <header class="main-header buyer-header" style="flex-shrink: 0; background: #ffffff; border-bottom: 1px solid #e2e8f0; position: relative;">
+            <button class="btn-icon" id="btnBackFromEvalMasterSearch" title="이전으로 이동">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 20px; height: 20px; color: #0f172a;">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+              </svg>
+            </button>
+            <h2 class="header-title" id="eval-master-search-page-title" style="font-size: 16px; font-weight: 800; color: #0f172a;">평가 대상 업체 검색</h2>
+            <div style="width: 32px; height: 32px;"></div>
+          </header>
+
+          <!-- 상단 탭 전환 바 (고정) -->
+          <div class="search-tab-bar" style="display: flex; background: #e2e8f0; border-radius: 12px; padding: 4px; margin: 16px 20px 8px 20px; gap: 4px; flex-shrink: 0;">
+            <button type="button" class="search-tab-btn active" id="tabEvalSearchCompany" style="flex: 1; height: 42px; border: none; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.25s;">업체 검색</button>
+            <button type="button" class="search-tab-btn" id="tabEvalRegisterCompany" style="flex: 1; height: 42px; border: none; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.25s;">평가 등록</button>
+          </div>
+
+          <!-- 스크롤 가능한 본문 영역 -->
+          <div class="master-search-content" style="flex: 1; overflow-y: auto; padding: 12px 20px 100px 20px; display: flex; flex-direction: column; gap: 16px;">
+            
+            <!-- 탭 콘텐츠 1: 업체 검색 영역 -->
+            <div id="searchEvalTabContent" style="display: flex; flex-direction: column; gap: 16px; width: 100%;">
+              <div style="background: #ffffff; border-radius: 16px; padding: 20px; box-shadow: var(--shadow-sm); border: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 16px; width: 100%;">
+                <p style="font-size: 13px; color: #64748b; margin: 0; line-height: 1.4;">
+                  백화점 연동 DB에서 평가를 시작할 업체를 검색해 주세요.
+                </p>
+                
+                <!-- 검색창 -->
+                <div class="search-box-wrapper" style="width: 100%;">
+                  <input type="text" id="evalMasterSearchInput" class="input-form" placeholder="업체명 또는 사업자등록번호로 검색..." style="height: 46px; font-size: 14px; padding-left: 16px; border-radius: 10px; border: 1px solid #cbd5e1; width: 100%;">
+                </div>
+
+                <!-- 검색 결과 그리드 영역 -->
+                <div style="border-top: 1px solid #f1f5f9; padding-top: 16px; display: flex; flex-direction: column; gap: 12px; width: 100%;">
+                  <h3 style="font-size: 14px; font-weight: 700; color: #0f172a; margin: 0;">업체 리스트</h3>
+                  <div id="evalMasterSearchCardGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; max-height: 35vh; overflow-y: auto; padding: 4px;">
+                    <!-- 업체 리스트 동적 카드 렌더링 -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 탭 콘텐츠 2: 평가 등록 영역 (독립 스크롤 분리 레이아웃) -->
+            <div id="registerEvalTabContent" style="display: none; flex-direction: column; gap: 16px; width: 100%;">
+              
+              <!-- 상단 고정 성격의 평가 대상 업체 정보 -->
+              <div style="display: flex; flex-direction: column; gap: 10px; background: #ffffff; border-radius: 16px; padding: 18px; border: 1px solid #e2e8f0; box-shadow: var(--shadow-sm); width: 100%; box-sizing: border-box;">
+                <h3 style="font-size: 14.5px; font-weight: 800; color: #0f172a; margin: 0 0 2px 0; border-left: 4px solid #0f172a; padding-left: 8px; line-height: 1;">평가 대상 업체 정보</h3>
+                
+                <!-- SUMMARY 플레이스홀더 (업체 미선택 시) -->
+                <div id="evalRegSummaryCardEmpty" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 20px; background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 12px; text-align: center; width: 100%; box-sizing: border-box;">
+                  <span style="font-size: 13px; color: #64748b; font-weight: 500;">평가할 업체가 선택되지 않았습니다.</span>
+                  <button type="button" id="btnGoToSearchTabFromEval" style="height: 34px; padding: 0 14px; background: #0f172a; color: #ffffff; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; outline: none;">업체 검색하기</button>
+                </div>
+                
+                <!-- SUMMARY 카드 (업체 선택 시) -->
+                <div id="evalRegSummaryCard" style="display: none; background: #f8fafc; border-radius: 12px; padding: 14px 16px; border: 1px solid #e2e8f0; flex-direction: column; gap: 8px; width: 100%; box-sizing: border-box;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h4 id="evalRegCompanyName" style="margin: 0; font-size: 15px; font-weight: 800; color: #0f172a;">선택된 업체 없음</h4>
+                    <span id="evalRegCompanyVhr" class="eval-badge" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; font-weight: 700; font-size: 11px; padding: 3px 8px; border-radius: 6px;">-</span>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 12px; color: #475569;">
+                    <div>사업부: <strong id="evalRegCompanyDiv" style="color: #0f172a;">-</strong></div>
+                    <div>업태: <strong id="evalRegCompanyBiz" style="color: #0f172a;">-</strong></div>
+                    <div style="grid-column: span 2;">사업자번호: <strong id="evalRegCompanyLicense" style="color: #0f172a;">-</strong></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 하단 리스트: 위생 안전성 점검 항목 -->
+              <div style="background: #ffffff; border-radius: 16px; padding: 18px; border: 1px solid #e2e8f0; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 12px; box-sizing: border-box; margin-bottom: 20px;">
+                <h3 style="font-size: 14.5px; font-weight: 800; color: #0f172a; margin: 0 0 4px 0; border-left: 4px solid #0f172a; padding-left: 8px; line-height: 1;">위생 안전성 점검 항목</h3>
+                <div id="evalRegChecklistQuestions" style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+                  <!-- 평가 항목 동적 렌더링 -->
+                </div>
+
+                <!-- 종합 상세 내용 및 이미지 다건 첨부 영역 -->
+                <div style="border-top: 1px dashed #e2e8f0; margin-top: 16px; padding-top: 16px; display: flex; flex-direction: column; gap: 12px;">
+                  <h3 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0; border-left: 4px solid #0f172a; padding-left: 8px; line-height: 1;">종합 상세 의견 및 현장 사진</h3>
+                  
+                  <!-- 텍스트 인풋 (종합 상세 의견) -->
+                  <div class="form-group" style="margin: 0; width: 100%;">
+                    <label class="form-label" style="font-size: 12.5px; font-weight: 700; margin-bottom: 6px;">종합 점검 내용 기재</label>
+                    <div class="textarea-wrapper">
+                      <textarea id="evalRegGeneralComment" class="input-form textarea-form" placeholder="이번 현장 점검의 전체 총평 및 상세 보완 지시사항을 기록해 주세요." style="height: 80px; resize: none; padding: 10px; font-size: 12.5px; border-radius: 8px; border: 1px solid #cbd5e1; width: 100%; box-sizing: border-box; outline: none;"></textarea>
+                    </div>
+                  </div>
+
+                  <!-- 다건 이미지 추가 -->
+                  <div class="detail-extra-section" style="padding: 0; margin: 0; border: none; background: none;">
+                    <label class="form-label" style="font-size: 12.5px; font-weight: 700; margin-bottom: 6px;">현장 종합 증빙 사진 (*다건 첨부)</label>
+                    <div class="image-upload-wrapper" style="margin: 0;">
+                      <label for="evalRegGeneralImageInput" class="upload-trigger-zone" style="height: 48px; padding: 0 16px; border-radius: 10px; border: 1px dashed #cbd5e1; font-size: 12.5px; font-weight: 700; color: #475569; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; background: #f8fafc; transition: all 0.2s;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;">
+                          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                          <circle cx="12" cy="13" r="4"/>
+                        </svg>
+                        <span>종합 사진 추가 (다건 선택 가능)</span>
+                        <input type="file" id="evalRegGeneralImageInput" accept="image/*" multiple style="display: none;">
+                      </label>
+                      
+                      <!-- 업로드 이미지 미리보기 썸네일 그리드 -->
+                      <div class="item-photo-grid" id="evalRegGeneralPreviewGrid" style="display: none; gap: 8px; flex-wrap: wrap; margin-top: 10px; width: 100%;">
+                        <!-- 업로드된 다건 사진 썸네일 미리보기 동적 렌더링 -->
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          </div>
+
+          <!-- 하단 Sticky 평가 등록 완료 CTA 버튼 그룹 (고정) -->
+          <div class="detail-scoring-panel" id="evalMasterRegisterActionsBar" style="position: absolute; bottom: 0; left: 0; width: 100%; z-index: 50; background: #ffffff; border-top: 1px solid #e2e8f0; padding: 16px 20px; box-shadow: 0 -4px 16px rgba(0,0,0,0.08); display: none; gap: 8px; box-sizing: border-box; border-bottom-left-radius: 47px; border-bottom-right-radius: 47px; flex-direction: row !important;">
+            <button type="button" class="btn-scoring-draft" id="btnCreateNewEvalMasterDraft" style="flex: 1; height: 50px !important; cursor: pointer; border: none; font-size: 13.5px; font-weight: 600; border-radius: 12px; transition: all 0.2s;">임시저장</button>
+            <button type="button" class="btn-scoring-submit" id="btnCreateNewEvalMasterPage" style="flex: 2; height: 50px !important; margin-top: 0 !important; cursor: pointer; border: none; font-size: 13.5px; font-weight: 600; border-radius: 12px; transition: all 0.2s;">평가 등록 완료</button>
           </div>
         </div>
 

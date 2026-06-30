@@ -126,6 +126,228 @@ let isNameChecked = false;
 let isLicenseChecked = false;
 let isBuyerDetailReadOnly = false;
 let buyerActiveTab = 'all';
+let tempEvalAnswers = {
+  'C01': { result: '', memo: '', photos: [], files: [] },
+  'C02': { result: '', memo: '', photos: [], files: [] },
+  'C03': { result: '', memo: '', photos: [], files: [] }
+};
+let tempSelectedCompanyForEval = null;
+let evalRegGeneralPhotos = [];
+
+function renderRegisterChecklistQuestions() {
+  const container = document.getElementById('evalRegChecklistQuestions');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const dummyQuestions = [
+    { id: 'C01', item: '작업자 위생모/위생복/위생화 착용 및 청결 상태', desc: '위생 복장 착용 규정 준수 여부', help: '종사자의 위생 장구(위생모 머리카락 포함, 위생복 청결, 전용 위생화 등)의 착용 및 세척 살균 상태 규정을 완벽히 충족하는지 검사합니다.' },
+    { id: 'C02', item: '종사자 손 세척 및 소독 적정성', desc: '원료 취급 전 손 세척/소독 준수 여부', help: '작업장 진입 전 또는 오염 물질 취급 후, 전용 소독조 및 손 세척 전용 비누/소독기를 활용해 정상적으로 세척 및 멸균 공정을 이행하는지 점검합니다.' },
+    { id: 'C03', item: '원부재료 입고 검사 및 신선도 상태', desc: '입고 유통기한 경과 여부 확인', help: '입고되는 원부자재의 냉장/냉동 적정 차량 운송 여부, 기한 만료품 입고 통제 상태, 성적서 유무 및 선도 상태를 종합 판정합니다.' }
+  ];
+
+  dummyQuestions.forEach((q, idx) => {
+    const card = document.createElement('div');
+    card.className = 'inspect-card';
+
+    const data = tempEvalAnswers[q.id] || { result: '', memo: '', photos: [], files: [] };
+    const isFitActive = data.result === 'fit' ? 'active' : '';
+    const isUnfitActive = data.result === 'unfit' ? 'active' : '';
+    const isAccordionOpen = data.result !== '';
+
+    card.innerHTML = `
+      <div class="inspect-card-header" style="position: relative;">
+        <span class="item-num">점검 항목 ${idx + 1}</span>
+        <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+          <h5 class="item-title" style="margin: 0;">${q.item}</h5>
+          <button class="btn-help-guide btn-help-tooltip" data-qid="${q.id}" style="background: #e2e8f0; border: none; width: 16px; height: 16px; border-radius: 50%; cursor: pointer; color: #475569; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; font-family: sans-serif; transition: all 0.2s;" title="도움말 확인">?</button>
+        </div>
+        <p class="item-desc" style="margin-top: 4px;">${q.desc}</p>
+      </div>
+
+      <div class="binary-control" data-qid="${q.id}">
+        <button type="button" class="binary-btn btn-fit ${isFitActive}" data-result="fit" style="outline: none;">적합</button>
+        <button type="button" class="binary-btn btn-unfit ${isUnfitActive}" data-result="unfit" style="outline: none;">부적합</button>
+      </div>
+
+      <!-- 상세 입력 영역 (동적 아코디언 UI) -->
+      <div id="accordion-${q.id}" class="inspect-card-extra" style="display: ${isAccordionOpen ? 'flex' : 'none'}; flex-direction: column; gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #e2e8f0; width: 100%; box-sizing: border-box;">
+        
+        <!-- 파일/사진 첨부 버튼 그룹 -->
+        <div style="display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap; gap: 8px;">
+          <!-- 사진 촬영 버튼 -->
+          <button type="button" class="btn-item-photo btn-eval-add-photo" data-qid="${q.id}" style="height: 30px; padding: 0 10px; font-size: 12px; font-weight: 600; color: #475569; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s; outline: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 12px; height: 12px;">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+            사진 추가
+          </button>
+          <input type="file" id="file-photo-${q.id}" accept="image/*" style="display: none;">
+
+          <!-- 개선조치 파일 첨부 버튼 -->
+          <button type="button" class="btn-item-photo btn-eval-add-file" data-qid="${q.id}" style="height: 30px; padding: 0 10px; font-size: 12px; font-weight: 600; color: #475569; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s; outline: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 12px; height: 12px;">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+            </svg>
+            파일 첨부
+          </button>
+          <input type="file" id="file-doc-${q.id}" accept=".pdf,.doc,.docx,.xls,.xlsx,.zip" style="display: none;">
+          
+          <span class="item-photo-guide" style="font-size: 11px; color: #94a3b8; font-weight: 500;">* JPG, PNG, PDF (최대 5MB)</span>
+        </div>
+
+        <!-- 실시간 업로드 증빙 미리보기 그리드 -->
+        <div id="preview-grid-${q.id}" class="item-photo-grid" style="display: ${ (data.photos.length > 0 || data.files.length > 0) ? 'flex' : 'none' }; gap: 8px; flex-wrap: wrap; margin-top: 4px; width: 100%;">
+          <!-- 파일/사진 미리보기 칩 렌더링 -->
+        </div>
+
+        <!-- 상세 텍스트 입력 -->
+        <div style="display: flex; flex-direction: column; gap: 4px; width: 100%; margin-top: 4px;">
+          <textarea class="eval-memo-input item-memo-input input-form" data-qid="${q.id}" placeholder="상세 내용 및 항목별 메모 입력" style="height: 48px; padding: 6px 10px; font-size: 12.5px; border-radius: 6px; border: 1px solid #cbd5e1; resize: none; width: 100%; box-sizing: border-box; outline: none;">${data.memo}</textarea>
+        </div>
+
+      </div>
+    `;
+
+    // ? 도움말 버튼 클릭 시 중앙 팝업 생성
+    card.querySelector('.btn-help-tooltip').addEventListener('click', (e) => {
+      e.stopPropagation();
+      openHelpPopup(q.item, q.help);
+    });
+
+    // 적합/부적합 클릭 시 아코디언 슬라이드
+    card.querySelectorAll('.binary-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        card.querySelectorAll('.binary-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        const qid = q.id;
+        const val = e.target.getAttribute('data-result');
+        
+        tempEvalAnswers[qid].result = val;
+
+        // 아코디언 부드럽게 보이기
+        const accordion = card.querySelector(`#accordion-${qid}`);
+        if (accordion) {
+          accordion.style.display = 'flex';
+        }
+      });
+    });
+
+    // 텍스트 실시간 저장
+    card.querySelector('.eval-memo-input').addEventListener('input', (e) => {
+      const qid = e.target.getAttribute('data-qid');
+      tempEvalAnswers[qid].memo = e.target.value;
+    });
+
+    // 가상 사진 추가 트리거
+    const btnPhoto = card.querySelector('.btn-eval-add-photo');
+    const inputPhoto = card.querySelector(`#file-photo-${q.id}`);
+    btnPhoto.addEventListener('click', () => inputPhoto.click());
+    inputPhoto.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        tempEvalAnswers[q.id].photos.push(file.name);
+        showToast(`사진 "${file.name}"이 임시 첨부되었습니다.`);
+        renderFilePreviews(q.id);
+      }
+    });
+
+    // 가상 파일 첨부 트리거
+    const btnFile = card.querySelector('.btn-eval-add-file');
+    const inputDoc = card.querySelector(`#file-doc-${q.id}`);
+    btnFile.addEventListener('click', () => inputDoc.click());
+    inputDoc.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        tempEvalAnswers[q.id].files.push(file.name);
+        showToast(`문서 "${file.name}"이 임시 첨부되었습니다.`);
+        renderFilePreviews(q.id);
+      }
+    });
+
+    container.appendChild(card);
+    renderFilePreviews(q.id); // 혹시 기존 데이터가 있으면 미리보기 로드
+  });
+}
+
+function openHelpPopup(title, content) {
+  const exist = document.getElementById('evalHelpPopupModal');
+  if (exist) exist.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'evalHelpPopupModal';
+  modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 15000; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; transition: all 0.25s; opacity: 0;';
+  
+  modal.innerHTML = `
+    <div style="background: #ffffff; border-radius: 20px; width: 100%; max-width: 360px; padding: 20px; box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2); display: flex; flex-direction: column; gap: 12px; transform: scale(0.9); transition: all 0.25s;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
+        <h4 style="margin: 0; font-size: 14px; font-weight: 800; color: #0f172a;">점검 상세 기준 도움말</h4>
+        <button type="button" class="btn-close-help" style="background: none; border: none; font-size: 20px; line-height: 1; cursor: pointer; color: #94a3b8; outline: none; padding: 0;">&times;</button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <strong style="font-size: 13.5px; color: #0f172a; font-weight: 800; line-height: 1.4;">${title}</strong>
+        <p style="margin: 0; font-size: 12.5px; color: #475569; line-height: 1.5; font-weight: 500; text-align: justify; white-space: normal; word-break: keep-all;">${content}</p>
+      </div>
+      <button type="button" class="btn-close-help" style="width: 100%; height: 40px; background: #0f172a; color: #ffffff; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; margin-top: 6px; outline: none;">닫기</button>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+  
+  setTimeout(() => {
+    modal.style.opacity = '1';
+    modal.querySelector('div').style.transform = 'scale(1)';
+  }, 10);
+
+  modal.querySelectorAll('.btn-close-help').forEach(btn => {
+    btn.addEventListener('click', () => {
+      modal.style.opacity = '0';
+      modal.querySelector('div').style.transform = 'scale(0.9)';
+      setTimeout(() => modal.remove(), 250);
+    });
+  });
+}
+
+function renderFilePreviews(qid) {
+  const grid = document.getElementById(`preview-grid-${qid}`);
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  const data = tempEvalAnswers[qid] || { result: '', memo: '', photos: [], files: [] };
+  const allItems = [...data.photos.map(p => ({ name: p, isPhoto: true })), ...data.files.map(f => ({ name: f, isPhoto: false }))];
+
+  if (allItems.length === 0) {
+    grid.style.display = 'none';
+    return;
+  }
+
+  grid.style.display = 'flex';
+  allItems.forEach((item, idx) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'item-thumb-wrapper';
+    wrapper.style.cssText = 'position: relative; width: 70px; height: 70px; border-radius: 8px; overflow: hidden; border: 1px solid #cbd5e1; margin-right: 4px;';
+
+    const imgSrc = item.isPhoto 
+      ? 'https://picsum.photos/id/20/150/150' 
+      : 'https://cdn-icons-png.flaticon.com/512/281/281760.png';
+
+    wrapper.innerHTML = `
+      <img src="${imgSrc}" alt="${item.name}" class="clickable-item-thumb" style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;" title="${item.name}">
+      <button type="button" class="btn-del-item-thumb btn-del-file" style="position: absolute; top: 4px; right: 4px; width: 18px; height: 18px; border-radius: 50%; background: rgba(15, 23, 42, 0.75); border: none; color: #ffffff; font-size: 11px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 5;">&times;</button>
+    `;
+
+    wrapper.querySelector('.btn-del-file').addEventListener('click', () => {
+      if (item.isPhoto) {
+        data.photos = data.photos.filter(p => p !== item.name);
+      } else {
+        data.files = data.files.filter(f => f !== item.name);
+      }
+      renderFilePreviews(qid);
+    });
+
+    grid.appendChild(wrapper);
+  });
+}
 
 // 초기화 함수
 function init() {
@@ -135,6 +357,7 @@ function init() {
   initBuyerEval();
   initMfrEval();
   initMasterSearch();
+  initEvalMasterSearch();
 }
 
 // 공통 이벤트 및 다국어, 알림 처리
@@ -325,13 +548,17 @@ function initBuyerEval() {
     if (buyerEvalView) buyerEvalView.style.display = 'flex';
     if (buyerDetailView) buyerDetailView.style.display = 'none';
     
-    // 탭 상태 초기화
+    // 탭 상태 초기화 (디폴트: 평가 관리)
     btnTabEval?.classList.add('active');
     btnTabCompany?.classList.remove('active');
     if (tabContentEval) tabContentEval.style.display = 'block';
     if (tabContentCompany) tabContentCompany.style.display = 'none';
     
-    renderBuyerList();
+    // 신규 등록 플러스(+) 버튼 노출
+    const btnHeaderAdd = document.getElementById('btnHeaderAdd');
+    if (btnHeaderAdd) btnHeaderAdd.style.display = 'flex';
+
+    renderBuyerList(); // 평가 관리 탭에는 기존 바이어 평가 결과 리스트 렌더링
   });
 
   btnTabEval?.addEventListener('click', () => {
@@ -339,7 +566,12 @@ function initBuyerEval() {
     btnTabCompany?.classList.remove('active');
     if (tabContentEval) tabContentEval.style.display = 'block';
     if (tabContentCompany) tabContentCompany.style.display = 'none';
-    renderBuyerList();
+    
+    // 신규 등록 플러스(+) 버튼 노출
+    const btnHeaderAdd = document.getElementById('btnHeaderAdd');
+    if (btnHeaderAdd) btnHeaderAdd.style.display = 'flex';
+
+    renderBuyerList(); // 평가 관리 탭에는 기존 바이어 평가 결과 리스트 렌더링
   });
 
   btnTabCompany?.addEventListener('click', () => {
@@ -347,18 +579,16 @@ function initBuyerEval() {
     btnTabEval?.classList.remove('active');
     if (tabContentEval) tabContentEval.style.display = 'none';
     if (tabContentCompany) tabContentCompany.style.display = 'block';
-    renderBuyerCompanyList();
+    
+    // 신규 등록 플러스(+) 버튼 노출
+    const btnHeaderAdd = document.getElementById('btnHeaderAdd');
+    if (btnHeaderAdd) btnHeaderAdd.style.display = 'flex';
+
+    renderBuyerCompanyList(); // 업체 관리 탭에는 등록 업체 리스트 렌더링
   });
 
-  const subTabs = document.querySelectorAll('.tab-container .tab-item');
-  subTabs.forEach(tab => {
-    tab.addEventListener('click', (e) => {
-      subTabs.forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      buyerActiveTab = tab.getAttribute('data-tab') || 'all';
-      renderBuyerList();
-    });
-  });
+  // 적합/부적합 소팅 탭 삭제에 따른 상태 고정
+  buyerActiveTab = 'all';
 
   btnBackToHome?.addEventListener('click', () => {
     if (buyerEvalView) buyerEvalView.style.display = 'none';
@@ -438,6 +668,63 @@ function initBuyerEval() {
     showToast(`"${email}" 주소로 결과 보고서가 정상 발송되었습니다.`);
     const sendModal = document.getElementById('sendReportModal');
     if (sendModal) sendModal.classList.remove('show');
+  });
+
+  document.getElementById('btnSubmitRegister')?.addEventListener('click', () => {
+    const regView = document.getElementById('buyer-register-view');
+    const isEditMode = regView && regView.querySelector('.header-title')?.textContent === '업체 상세 정보';
+
+    if (isEditMode) {
+      const name = document.getElementById('regCompanyName')?.value.trim();
+      showToast(`"${name}" 업체 정보 수정이 완료되었습니다.`);
+      if (regView) regView.style.display = 'none';
+      const evalView = document.getElementById('buyer-eval-view');
+      if (evalView) evalView.style.display = 'flex';
+      renderBuyerCompanyList();
+    } else {
+      const name = document.getElementById('regCompanyName')?.value.trim();
+      if (!name) {
+        showToast('업체명을 지정해 주세요.');
+        return;
+      }
+      const expressChk = document.getElementById('regExpress');
+      const isExpress = expressChk ? expressChk.checked : false;
+
+      // Express 월 5회 제한 검사
+      if (isExpress) {
+        const usedCount = buyerMockData.filter(d => d.express === true).length;
+        if (usedCount >= 5) {
+          showToast('Express 긴급 요청건은 월 최대 5회까지만 사용 가능합니다. (초과됨)');
+          return;
+        }
+      }
+
+      const newId = buyerMockData.length > 0 ? Math.max(...buyerMockData.map(d => d.id)) + 1 : 1;
+      const newCompany = {
+        id: newId,
+        buyerId: 'BUYER_DEPT_01',
+        storeName: '본점 (소공점)',
+        name: name,
+        date: document.getElementById('regDate')?.value || new Date().toISOString().split('T')[0],
+        div: document.getElementById('regDiv')?.value || '농산',
+        biz: document.getElementById('regBiz')?.value || '제조가공업',
+        vhr: document.querySelector('input[name="regVhr"]:checked')?.value || 'R',
+        express: isExpress,
+        status: 'pending',
+        comment: '신규 업체 등록 완료. 현장 평가 대기 중.'
+      };
+
+      buyerMockData.unshift(newCompany);
+      showToast(`"${name}" 업체가 신규 등록되었습니다.`);
+      
+      // 잔여 카운트 실시간 리렌더링
+      updateExpressCountUI();
+
+      if (regView) regView.style.display = 'none';
+      const evalView = document.getElementById('buyer-eval-view');
+      if (evalView) evalView.style.display = 'flex';
+      renderBuyerCompanyList();
+    }
   });
 
   document.getElementById('btnDetailDownloadExcel')?.addEventListener('click', () => {
@@ -568,8 +855,10 @@ function renderBuyerList() {
   filtered.forEach(item => {
     const card = document.createElement('div');
     card.className = 'eval-card';
+    
     const statusText = item.status === 'fit' ? '적합' : item.status === 'unfit' ? '부적합' : '대기';
     const statusClass = item.status === 'fit' ? 'badge-fit' : item.status === 'unfit' ? 'badge-unfit' : 'badge-pending';
+
     card.innerHTML = `
       <div class="card-header-row">
         <h4 class="card-title">${item.name}</h4>
@@ -599,26 +888,111 @@ function renderBuyerCompanyList() {
     const card = document.createElement('div');
     card.className = 'eval-card';
     card.style.cursor = 'pointer';
-    const statusText = item.status === 'fit' ? '적합' : item.status === 'unfit' ? '부적합' : '대기';
-    const statusClass = item.status === 'fit' ? 'badge-fit' : item.status === 'unfit' ? 'badge-unfit' : 'badge-pending';
+
+    // VHR 등급에 따른 컬러 코딩 뱃지 클래스 부여
+    let vhrClass = 'badge-pending'; // R (회색)
+    if (item.vhr === 'VHR') vhrClass = 'badge-unfit'; // VHR (빨강)
+    else if (item.vhr === 'HR') vhrClass = 'badge-express'; // HR (주황)
+
     card.innerHTML = `
       <div class="card-header-row">
         <h4 class="card-title">${item.name}</h4>
         <div class="card-badges">
           ${item.express ? `<span class="eval-badge badge-express">Express</span>` : ''}
-          <span class="eval-badge ${statusClass}">${statusText}</span>
+          <span class="eval-badge ${vhrClass}">${item.vhr}</span>
         </div>
       </div>
       <div class="card-info-grid">
         <div class="info-field"><span class="lbl">사업부 (Div.)</span><span class="val">${item.div}</span></div>
         <div class="info-field"><span class="lbl">업태</span><span class="val">${item.biz}</span></div>
-        <div class="info-field"><span class="lbl">VHR 유형</span><span class="val">${item.vhr}</span></div>
-        <div class="info-field"><span class="lbl">평가 등록일</span><span class="val">${item.date}</span></div>
+        <div class="info-field" style="grid-column: span 2;"><span class="lbl">평가 등록일</span><span class="val">${item.date}</span></div>
       </div>
     `;
-    card.addEventListener('click', () => openBuyerDetail(item));
+    card.addEventListener('click', () => openBuyerRegisterDetail(item));
     container.appendChild(card);
   });
+}
+
+function updateExpressCountUI() {
+  const badge = document.getElementById('expressCountBadge');
+  const chk = document.getElementById('regExpress');
+  if (!badge) return;
+
+  // 전체 데이터 중 Express 요청건으로 등록된 횟수 카운팅
+  const usedCount = buyerMockData.filter(d => d.express === true).length;
+  const limit = 5;
+  const remaining = Math.max(0, limit - usedCount);
+
+  badge.textContent = `(잔여 ${remaining}회 / 월 ${limit}회)`;
+
+  if (remaining <= 0) {
+    badge.style.background = '#f1f5f9';
+    badge.style.color = '#94a3b8';
+    badge.style.border = '1px solid #cbd5e1';
+    if (chk) {
+      chk.disabled = true;
+      chk.checked = false;
+    }
+    badge.textContent = `(사용 불가 / 월 ${limit}회 초과)`;
+  } else {
+    badge.style.background = '#fee2e2';
+    badge.style.color = '#ef4444';
+    badge.style.border = 'none';
+    if (chk) {
+      // 조회수정 모드가 아닐 때만 disabled 해제 처리하기 위해 체크박스의 상태 보장
+      chk.disabled = false;
+    }
+  }
+}
+
+function openBuyerRegisterDetail(item) {
+  // 실시간 Express 잔여 횟수 뱃지 갱신
+  updateExpressCountUI();
+
+  // 만약 상세 조회 시 기존에 Express로 등록된 업체였다면 체크박스를 활성화된 상태로 노출
+  const chk = document.getElementById('regExpress');
+  if (chk) {
+    chk.checked = item.express === true;
+    // 상세조회 화면에서는 임의로 수정이 불가하도록 체크박스를 readonly(disabled) 처리
+    chk.disabled = true;
+  }
+  const allViews = ['home-view', 'buyer-eval-view', 'buyer-detail-view', 'buyer-register-view', 'mfr-eval-view', 'mfr-register-view', 'master-search-view', 'eval-master-search-view'];
+  allViews.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+
+  const regView = document.getElementById('buyer-register-view');
+  if (regView) regView.style.display = 'flex';
+
+  // 헤더 타이틀 변경: "신규 업체 등록" -> "업체 상세 정보"
+  const titleEl = regView.querySelector('.header-title');
+  if (titleEl) titleEl.textContent = '업체 상세 정보';
+
+  // 입력 필드 채우기
+  const regDate = document.getElementById('regDate');
+  if (regDate) regDate.value = item.date || new Date().toISOString().split('T')[0];
+
+  const regCompanyName = document.getElementById('regCompanyName');
+  if (regCompanyName) regCompanyName.value = item.name || '';
+
+  const regLicense = document.getElementById('regLicense');
+  if (regLicense) regLicense.value = item.licenseNo || '120-81-22456';
+
+  const regDiv = document.getElementById('regDiv');
+  if (regDiv) regDiv.value = item.div || '농산';
+
+  const regBiz = document.getElementById('regBiz');
+  if (regBiz) regBiz.value = item.biz || '제조가공업';
+
+  const regVhr = document.querySelector(`input[name="regVhr"][value="${item.vhr || 'R'}"]`);
+  if (regVhr) regVhr.checked = true;
+
+  // 하단 버튼 텍스트 수정 완료로 변경
+  const btnSubmit = document.getElementById('btnSubmitRegister');
+  if (btnSubmit) btnSubmit.textContent = '업체 정보 수정 완료';
+
+  showToast(`"${item.name}" 업체 상세 정보를 로드했습니다.`);
 }
 
 function openBuyerDetail(item) {
@@ -1998,6 +2372,264 @@ function renderMasterSearchCards() {
   });
 }
 
+let previousEvalSearchViewId = 'buyer-eval-view';
+
+function openEvalMasterSearch(type, prevId, title) {
+  previousEvalSearchViewId = prevId;
+  const pageTitle = document.getElementById('eval-master-search-page-title');
+  const evalSearchView = document.getElementById('eval-master-search-view');
+  const searchInput = document.getElementById('evalMasterSearchInput');
+
+  if (pageTitle) pageTitle.textContent = title;
+  
+  // 모든 뷰 숨김
+  const allViews = ['home-view', 'buyer-eval-view', 'buyer-detail-view', 'buyer-register-view', 'mfr-eval-view', 'mfr-register-view', 'master-search-view'];
+  allViews.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+
+  if (evalSearchView) evalSearchView.style.display = 'flex';
+  if (searchInput) searchInput.value = '';
+  
+  // 상태 변수 초기화
+  tempSelectedCompanyForEval = null;
+  evalRegGeneralPhotos = [];
+  const generalComment = document.getElementById('evalRegGeneralComment');
+  if (generalComment) generalComment.value = '';
+  renderEvalRegGeneralPreviews();
+
+  const emptyCard = document.getElementById('evalRegSummaryCardEmpty');
+  const summaryCard = document.getElementById('evalRegSummaryCard');
+  if (emptyCard) emptyCard.style.display = 'flex';
+  if (summaryCard) summaryCard.style.display = 'none';
+  const questionsContainer = document.getElementById('evalRegChecklistQuestions');
+  if (questionsContainer) questionsContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 13px;">평가 대상 업체를 선택하시면 점검 항목이 노출됩니다.</div>';
+
+  renderEvalMasterSearchCards();
+  
+  // 기본 탭 '업체 검색' 강제 트리거
+  document.getElementById('tabEvalSearchCompany')?.click();
+}
+
+function initEvalMasterSearch() {
+  const evalSearchView = document.getElementById('eval-master-search-view');
+  const btnBack = document.getElementById('btnBackFromEvalMasterSearch');
+  const searchInput = document.getElementById('evalMasterSearchInput');
+  const tabSearch = document.getElementById('tabEvalSearchCompany');
+  const tabRegister = document.getElementById('tabEvalRegisterCompany');
+  const searchContent = document.getElementById('searchEvalTabContent');
+  const registerContent = document.getElementById('registerEvalTabContent');
+  const actionsBar = document.getElementById('evalMasterRegisterActionsBar');
+  const btnSubmit = document.getElementById('btnCreateNewEvalMasterPage');
+  const btnDraft = document.getElementById('btnCreateNewEvalMasterDraft');
+
+  btnBack?.addEventListener('click', () => {
+    if (evalSearchView) evalSearchView.style.display = 'none';
+    const prev = document.getElementById(previousEvalSearchViewId);
+    if (prev) prev.style.display = 'flex';
+  });
+
+  tabSearch?.addEventListener('click', () => {
+    tabSearch.classList.add('active');
+    tabRegister?.classList.remove('active');
+    if (searchContent) searchContent.style.display = 'flex';
+    if (registerContent) registerContent.style.display = 'none';
+    if (actionsBar) actionsBar.style.display = 'none';
+  });
+
+  tabRegister?.addEventListener('click', () => {
+    tabRegister.classList.add('active');
+    tabSearch?.classList.remove('active');
+    if (searchContent) searchContent.style.display = 'none';
+    if (registerContent) registerContent.style.display = 'flex';
+    if (actionsBar) actionsBar.style.display = 'flex';
+  });
+
+  document.getElementById('btnGoToSearchTabFromEval')?.addEventListener('click', () => {
+    tabSearch?.click();
+  });
+
+  searchInput?.addEventListener('input', () => renderEvalMasterSearchCards());
+
+  // 종합 현장 사진 다건 업로드 이벤트 바인딩
+  const generalImageInput = document.getElementById('evalRegGeneralImageInput');
+  generalImageInput?.addEventListener('change', (e) => {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+      evalRegGeneralPhotos.push(file.name);
+    });
+    showToast(`${files.length}건의 현장 사진이 종합 추가되었습니다.`);
+    renderEvalRegGeneralPreviews();
+  });
+
+  btnSubmit?.addEventListener('click', () => {
+    if (!tempSelectedCompanyForEval) {
+      showToast('평가할 업체를 먼저 검색하여 지정해 주세요.');
+      return;
+    }
+
+    const answersList = Object.values(tempEvalAnswers);
+    const incomplete = answersList.some(ans => ans.result === '');
+    if (incomplete) {
+      showToast('모든 점검 항목에 대해 적합 또는 부적합 판정을 선택해 주세요.');
+      return;
+    }
+
+    const isUnfit = answersList.some(ans => ans.result === 'unfit');
+    const finalStatus = isUnfit ? 'unfit' : 'fit';
+    const newId = buyerMockData.length > 0 ? Math.max(...buyerMockData.map(d => d.id)) + 1 : 1;
+    const unfitMemos = answersList.filter(ans => ans.result === 'unfit' && ans.memo).map(ans => ans.memo);
+    
+    // 점검 미비 사항 취합
+    let finalComment = isUnfit 
+      ? `일부 위생 항목 미비 발견: ${unfitMemos.join(', ') || '개선 조치 권고.'}` 
+      : '특이사항 없으며 위생 상태 매우 양호함.';
+
+    // 종합 상세 내용 기재 영역 연동
+    const generalComment = document.getElementById('evalRegGeneralComment')?.value.trim() || '';
+    if (generalComment) {
+      finalComment += ` [종합 의견] ${generalComment}`;
+    }
+
+    const newEval = {
+      id: newId,
+      buyerId: 'BUYER_DEPT_01',
+      storeName: '본점 (소공점)',
+      name: tempSelectedCompanyForEval.name,
+      date: new Date().toISOString().split('T')[0],
+      div: tempSelectedCompanyForEval.div,
+      biz: tempSelectedCompanyForEval.biz,
+      vhr: tempSelectedCompanyForEval.vhr,
+      express: false,
+      status: finalStatus,
+      comment: finalComment
+    };
+
+    buyerMockData.unshift(newEval);
+    showToast(`"${tempSelectedCompanyForEval.name}" 평가 등록이 완료되었습니다.`);
+
+    if (evalSearchView) evalSearchView.style.display = 'none';
+    const buyerEvalView = document.getElementById('buyer-eval-view');
+    if (buyerEvalView) buyerEvalView.style.display = 'flex';
+    
+    renderBuyerList(); // 리스트 갱신 (업체 관리 탭의 평가 결과 리스트)
+  });
+
+  btnDraft?.addEventListener('click', () => {
+    showToast('평가 작성 중인 내용이 임시 저장되었습니다.');
+  });
+}
+
+function renderEvalRegGeneralPreviews() {
+  const grid = document.getElementById('evalRegGeneralPreviewGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  if (evalRegGeneralPhotos.length === 0) {
+    grid.style.display = 'none';
+    return;
+  }
+
+  grid.style.display = 'flex';
+  evalRegGeneralPhotos.forEach((photoName, idx) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'item-thumb-wrapper';
+    wrapper.style.cssText = 'position: relative; width: 70px; height: 70px; border-radius: 8px; overflow: hidden; border: 1px solid #cbd5e1; margin-right: 4px;';
+
+    // 더미 사진 리스트 번갈아가며 로드
+    const imgSrc = `https://picsum.photos/id/${30 + idx}/150/150`;
+
+    wrapper.innerHTML = `
+      <img src="${imgSrc}" alt="${photoName}" class="clickable-item-thumb" style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;" title="${photoName}">
+      <button type="button" class="btn-del-item-thumb btn-del-file" style="position: absolute; top: 4px; right: 4px; width: 18px; height: 18px; border-radius: 50%; background: rgba(15, 23, 42, 0.75); border: none; color: #ffffff; font-size: 11px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 5;">&times;</button>
+    `;
+
+    wrapper.querySelector('.btn-del-file').addEventListener('click', () => {
+      evalRegGeneralPhotos = evalRegGeneralPhotos.filter(name => name !== photoName);
+      renderEvalRegGeneralPreviews();
+    });
+
+    grid.appendChild(wrapper);
+  });
+}
+
+function renderEvalMasterSearchCards() {
+  const grid = document.getElementById('evalMasterSearchCardGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  
+  const searchInput = document.getElementById('evalMasterSearchInput');
+  const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+  
+  const filteredList = companyMasterList.filter(c => {
+    if (!query) return true;
+    const nameMatch = c.name.toLowerCase().includes(query);
+    const cleanLicense = c.licenseNo.replace(/[^0-9]/g, '');
+    const cleanQuery = query.replace(/[^0-9]/g, '');
+    const licenseMatch = c.licenseNo.toLowerCase().includes(query) || (cleanQuery !== '' && cleanLicense.includes(cleanQuery));
+    return nameMatch || licenseMatch;
+  });
+
+  if (filteredList.length === 0) {
+    grid.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; color: #94a3b8; font-size: 13.5px;">
+        검색 결과와 일치하는 업체가 없습니다.
+      </div>
+    `;
+    return;
+  }
+  
+  filteredList.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'master-company-card';
+    card.style.padding = '12px 16px';
+    card.innerHTML = `
+      <span class="card-badge badge-vhr" style="top: 12px; right: 16px;">${c.vhr}</span>
+      <h4 class="card-company-name" style="margin: 0 0 6px 0; font-size: 14px; font-weight: 800;">${c.name}</h4>
+      <div class="card-info-row" style="font-size: 11px; color: #64748b;">
+        <span>사업자번호: <strong>${c.licenseNo}</strong></span>
+      </div>
+    `;
+    card.addEventListener('click', () => {
+      tempSelectedCompanyForEval = c;
+      tempEvalAnswers = {
+        'C01': { result: '', memo: '', photos: [], files: [] },
+        'C02': { result: '', memo: '', photos: [], files: [] },
+        'C03': { result: '', memo: '', photos: [], files: [] }
+      };
+
+      const emptyCard = document.getElementById('evalRegSummaryCardEmpty');
+      const summaryCard = document.getElementById('evalRegSummaryCard');
+      if (emptyCard) emptyCard.style.display = 'none';
+      if (summaryCard) summaryCard.style.display = 'flex';
+
+      const cName = document.getElementById('evalRegCompanyName');
+      const cVhr = document.getElementById('evalRegCompanyVhr');
+      const cDiv = document.getElementById('evalRegCompanyDiv');
+      const cBiz = document.getElementById('evalRegCompanyBiz');
+      const cLicense = document.getElementById('evalRegCompanyLicense');
+
+      if (cName) cName.textContent = c.name;
+      if (cVhr) {
+        cVhr.textContent = c.vhr;
+        let vhrStyle = 'background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;'; // R
+        if (c.vhr === 'VHR') vhrStyle = 'background: #fef2f2; color: #ef4444; border: 1px solid #fee2e2;';
+        else if (c.vhr === 'HR') vhrStyle = 'background: #fffbeb; color: #d97706; border: 1px solid #fef3c7;';
+        cVhr.style.cssText = vhrStyle + ' font-weight: 800; font-size: 11px; padding: 3px 8px; border-radius: 6px;';
+      }
+      if (cDiv) cDiv.textContent = c.div;
+      if (cBiz) cBiz.textContent = c.biz;
+      if (cLicense) cLicense.textContent = c.licenseNo;
+
+      renderRegisterChecklistQuestions();
+      document.getElementById('tabEvalRegisterCompany')?.click();
+      showToast(`"${c.name}" 평가 화면이 준비되었습니다.`);
+    });
+    grid.appendChild(card);
+  });
+}
+
 // 8대 메뉴 클릭 시 햅틱 피드백 가상 동작 (토스트 노출) - 바이어/제조사를 제외한 메뉴들
 const menuButtons = document.querySelectorAll('.menu-item, .btn-shop-reg');
 menuButtons.forEach(btn => {
@@ -2009,14 +2641,38 @@ menuButtons.forEach(btn => {
   });
 });
 
-// 바이어 평가 헤더 플러스 버튼 클릭 -> 마스터 검색 뷰 열기
+// 바이어 평가 헤더 플러스 버튼 클릭 -> 탭에 따라 각각의 독립된 검색 뷰 열기
 document.getElementById('btnHeaderAdd')?.addEventListener('click', () => {
-  openMasterSearch('buyer', 'buyer-eval-view', '신규 업체 등록');
-  
-  const regCompanyName = document.getElementById('regCompanyName');
-  if (regCompanyName) regCompanyName.value = '';
-  const regLicense = document.getElementById('regLicense');
-  if (regLicense) regLicense.value = '';
+  const isEvalTabActive = document.getElementById('btn-tab-eval')?.classList.contains('active');
+  if (isEvalTabActive) {
+    // 평가 관리 플러스 클릭 시 ➡️ 독립 뷰인 eval-master-search-view 노출
+    openEvalMasterSearch('buyer', 'buyer-eval-view', '평가 대상 업체 검색');
+  } else {
+    // 업체 관리 플러스 클릭 시 ➡️ 기존 master-search-view 노출
+    openMasterSearch('buyer', 'buyer-eval-view', '신규 업체 등록');
+    
+    // 신규 모드로 타이틀 및 버튼 복원
+    const regView = document.getElementById('buyer-register-view');
+    if (regView) {
+      const titleEl = regView.querySelector('.header-title');
+      if (titleEl) titleEl.textContent = '신규 업체 등록';
+      const btnSubmit = document.getElementById('btnSubmitRegister');
+      if (btnSubmit) btnSubmit.textContent = '업체 등록 완료';
+    }
+
+    // Express 체크박스 초기화 및 카운트 실시간 업데이트
+    const expressChk = document.getElementById('regExpress');
+    if (expressChk) {
+      expressChk.checked = false;
+      expressChk.disabled = false;
+    }
+    updateExpressCountUI();
+
+    const regCompanyName = document.getElementById('regCompanyName');
+    if (regCompanyName) regCompanyName.value = '';
+    const regLicense = document.getElementById('regLicense');
+    if (regLicense) regLicense.value = '';
+  }
 });
 
 // 바이어 등록 뒤로가기
