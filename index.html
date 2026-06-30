@@ -975,86 +975,400 @@
         </div>
 
         <!-- [Mfr Register View] 제조사 등록/수정 화면 (신규 추가) -->
-        <div id="mfr-register-view" class="view-container" style="display: none;">
+        <div id="mfr-register-view" class="view-container" style="display: none; flex-direction: column; height: 100%; overflow: hidden; position: relative; background: #f8fafc; padding: 0 !important;">
           <!-- 제조사 등록 헤더 -->
-          <header class="main-header buyer-header">
+          <header class="main-header buyer-header" style="flex-shrink: 0; background: #ffffff; border-bottom: 1px solid #e2e8f0; position: relative;">
             <button class="btn-icon" id="btnMfrBackToEvalFromReg" title="이전으로 이동">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 20px; height: 20px; color: #0f172a;">
                 <line x1="19" y1="12" x2="5" y2="12"></line>
                 <polyline points="12 19 5 12 12 5"></polyline>
               </svg>
             </button>
-            <h2 class="header-title" id="txt-mfr-register-title">신규 제조사 등록</h2>
-            <div style="width: 32px;"></div>
+            <h2 class="header-title" id="txt-mfr-register-title">제조사 업체 등록</h2>
+            <div style="width: 32px; height: 32px;"></div>
           </header>
 
+          <!-- 상단 탭 전환 바 (고정) -->
+          <div class="search-tab-bar" id="mfrRegTabBar" style="display: flex; background: #e2e8f0; border-radius: 12px; padding: 4px; margin: 16px 20px 8px 20px; gap: 4px; flex-shrink: 0;">
+            <button type="button" class="search-tab-btn active" id="tabMfrRegSearch" style="flex: 1; height: 42px; border: none; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.25s;">업체 검색</button>
+            <button type="button" class="search-tab-btn" id="tabMfrRegForm" style="flex: 1; height: 42px; border: none; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.25s;">신규 업체 등록</button>
+          </div>
+
           <!-- 콘텐츠 영역 (스크롤 가능) -->
-          <div class="buyer-register-content" style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; background: #f8fafc;">
-            <div class="register-form-container" style="padding: 20px; background: #ffffff; border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 18px;">
+          <div class="buyer-register-content" style="flex: 1; overflow-y: auto; padding: 12px 20px 100px 20px; display: flex; flex-direction: column; gap: 16px;">
+            
+            <!-- 탭 콘텐츠 1: 업체 검색 영역 -->
+            <div id="mfrRegSearchTab" style="display: flex; flex-direction: column; gap: 16px; width: 100%;">
+              <!-- 검색 영역 및 결과 리스트 통합 묶음 카드 -->
+              <div style="background: #ffffff; border-radius: 16px; padding: 20px; box-shadow: var(--shadow-sm); border: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 16px; width: 100%;">
+                <p style="font-size: 13px; color: #64748b; margin: 0; line-height: 1.4;">
+                  백화점 연동 DB에서 제조사를 검색 후 선택해 주세요.
+                </p>
+                
+                <!-- 검색창 -->
+                <div class="search-box-wrapper" style="width: 100%;">
+                  <input type="text" id="mfrRegSearchInput" class="input-form" placeholder="업체명 또는 사업자등록번호로 검색..." style="height: 46px; font-size: 14px; padding-left: 16px; border-radius: 10px; border: 1px solid #cbd5e1; width: 100%;">
+                </div>
+
+                <!-- 검색 결과 그리드 영역 -->
+                <div style="border-top: 1px solid #f1f5f9; padding-top: 16px; display: flex; flex-direction: column; gap: 12px; width: 100%;">
+                  <h3 style="font-size: 14px; font-weight: 700; color: #0f172a; margin: 0;">제조사 업체 리스트</h3>
+                  <div id="mfrRegSearchCardGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; max-height: 35vh; overflow-y: auto; padding: 4px;">
+                    <!-- 제조사 업체 리스트 동적 카드 렌더링 -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 탭 콘텐츠 2: 신규 업체 등록 폼 영역 (초기 숨김) -->
+            <div id="mfrRegFormTab" style="display: none; flex-direction: column; gap: 16px; width: 100%;">
               
-              <!-- 1. 제조사 구분 (OEM / 일반) -->
-              <div class="form-group">
-                <label class="form-label">제조사 구분 <span class="required">*</span></label>
-                <div class="segment-control" id="mfrRegTypeSegment" style="display: grid; grid-template-columns: 1fr 1fr; background: #f1f5f9; padding: 4px; border-radius: 12px; gap: 4px; border: 1px solid #e2e8f0;">
-                  <label class="segment-item">
-                    <input type="radio" name="mfrRegType" value="OEM" checked>
-                    <span class="segment-label" style="display: flex; align-items: center; justify-content: center; height: 38px; font-size: 13px; font-weight: 600; border-radius: 8px; cursor: pointer; transition: all 0.2s;">OEM 제조사</span>
-                  </label>
-                  <label class="segment-item">
-                    <input type="radio" name="mfrRegType" value="GENERAL">
-                    <span class="segment-label" style="display: flex; align-items: center; justify-content: center; height: 38px; font-size: 13px; font-weight: 600; border-radius: 8px; cursor: pointer; transition: all 0.2s;">일반 제조사</span>
-                  </label>
+              <!-- 1. [기본 정보] 섹션 카드 -->
+              <div class="register-form-card" style="padding: 20px; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 16px; width: 100%;">
+                <h3 style="font-size: 14.5px; font-weight: 800; color: #0f172a; margin: 0 0 4px 0; border-left: 4px solid #0f172a; padding-left: 8px; line-height: 1;">기본 정보</h3>
+                
+                <!-- 제조사 구분 -->
+                <div class="form-group">
+                  <label class="form-label">제조사 구분 <span class="required">*</span></label>
+                  <div class="segment-control" id="mfrRegTypeSegment" style="display: grid; grid-template-columns: 1fr 1fr; background: #f1f5f9; padding: 4px; border-radius: 12px; gap: 4px; border: 1px solid #e2e8f0;">
+                    <label class="segment-item">
+                      <input type="radio" name="mfrRegType" value="OEM" checked>
+                      <span class="segment-label" style="display: flex; align-items: center; justify-content: center; height: 38px; font-size: 13px; font-weight: 600; border-radius: 8px; cursor: pointer; transition: all 0.2s;">OEM 제조사</span>
+                    </label>
+                    <label class="segment-item">
+                      <input type="radio" name="mfrRegType" value="GENERAL">
+                      <span class="segment-label" style="display: flex; align-items: center; justify-content: center; height: 38px; font-size: 13px; font-weight: 600; border-radius: 8px; cursor: pointer; transition: all 0.2s;">일반 제조사</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- OEM 전용 추가 항목 -->
+                <div id="mfrRegOemSubSection" style="display: flex; flex-direction: column; gap: 14px; border: 1px dashed #cbd5e1; padding: 14px; border-radius: 12px; background: #f8fafc;">
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label class="form-label">거래업체 (등록 업체) <span class="required">*</span></label>
+                    <div style="display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px;">
+                      <button type="button" id="btnMfrSearchPartner" style="height: 38px; padding: 0 16px; background: #0f172a; color: #ffffff; font-weight: 700; border: none; border-radius: 8px; font-size: 12px; cursor: pointer; transition: all 0.2s; white-space: nowrap;">거래업체 검색</button>
+                    </div>
+                    <!-- 선택된 거래업체 목록 Chip 컨테이너 -->
+                    <div id="mfrSelectedPartnersContainer" class="selected-partners-container" style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 38px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff; width: 100%;">
+                      <span style="font-size: 12px; color: #94a3b8; align-self: center; margin-left: 4px;" id="txtNoPartnerSelected">선택된 거래업체가 없습니다.</span>
+                    </div>
+                    <input type="hidden" id="mfrRegPartner" value="">
+                  </div>
+                </div>
+
+                <!-- 제조사 업체명 -->
+                <div class="form-group" style="margin: 0; width: 100%;">
+                  <label for="mfrRegName" class="form-label">제조사명 <span class="required">*</span></label>
+                  <input type="text" id="mfrRegName" class="input-form" placeholder="정확한 제조사명을 입력해 주세요." style="width: 100%; height: 42px; margin-bottom: 8px;">
+                  <button type="button" id="btnMfrCheckName" style="width: 100%; height: 38px; background: #e2e8f0; color: #475569; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; outline: none;">제조사명 중복확인</button>
+                </div>
+
+                <!-- 사업자등록번호 -->
+                <div class="form-group" style="margin: 0; width: 100%;">
+                  <label for="mfrRegLicense" class="form-label">사업자등록번호 (영업인허가번호) <span class="required">*</span></label>
+                  <input type="text" id="mfrRegLicense" class="input-form" placeholder="사업자등록번호(10자리) 입력 (필수)" style="width: 100%; height: 42px; margin-bottom: 8px;">
+                  <button type="button" id="btnMfrCheckLicense" style="width: 100%; height: 38px; background: #e2e8f0; color: #475569; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; outline: none;">사업자번호 중복확인</button>
+                </div>
+
+                <!-- 등록 일자 -->
+                <div class="form-group">
+                  <label for="mfrRegDate" class="form-label">등록 일자 <span class="required">*</span></label>
+                  <input type="date" id="mfrRegDate" class="input-form">
+                </div>
+
+                <!-- 점검자 -->
+                <div class="form-group">
+                  <label for="mfrRegInspector" class="form-label">점검자 <span class="required">*</span></label>
+                  <input type="text" id="mfrRegInspector" class="input-form" placeholder="바이어 성명">
                 </div>
               </div>
 
-              <!-- 1-2. OEM 전용 추가 항목 -->
-              <div id="mfrRegOemSubSection" style="display: flex; flex-direction: column; gap: 16px; border: 1px dashed #cbd5e1; padding: 14px; border-radius: 12px; background: #ffffff;">
+              <!-- 2. [상세 정보] 섹션 카드 -->
+              <div class="register-form-card" style="padding: 20px; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 16px; width: 100%;">
+                <h3 style="font-size: 14.5px; font-weight: 800; color: #0f172a; margin: 0 0 4px 0; border-left: 4px solid #0f172a; padding-left: 8px; line-height: 1;">상세 정보</h3>
+                
+                <!-- 대표자명 -->
                 <div class="form-group">
-                  <label class="form-label">거래업체 (등록 업체) <span class="required">*</span></label>
-                  <div style="display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px;">
-                    <button type="button" id="btnMfrSearchPartner" style="height: 38px; padding: 0 16px; background: #0f172a; color: #ffffff; font-weight: 700; border: none; border-radius: 8px; font-size: 12px; cursor: pointer; transition: all 0.2s;">거래업체 검색</button>
-                  </div>
-                  <!-- 선택된 거래업체 목록 Chip 컨테이너 -->
-                  <div id="mfrSelectedPartnersContainer" class="selected-partners-container" style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 38px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc;">
-                    <span style="font-size: 12px; color: #94a3b8; align-self: center; margin-left: 4px;" id="txtNoPartnerSelected">선택된 거래업체가 없습니다.</span>
-                  </div>
-                  <input type="hidden" id="mfrRegPartner" value="">
+                  <label for="mfrRegOwner" class="form-label">대표자명</label>
+                  <input type="text" id="mfrRegOwner" class="input-form" placeholder="대표자 성명">
                 </div>
-                <div class="form-group" style="margin-bottom: 0;">
+
+                <!-- 주소 -->
+                <div class="form-group">
+                  <label for="mfrRegAddress" class="form-label">소재지 주소</label>
+                  <input type="text" id="mfrRegAddress" class="input-form" placeholder="제조공장 및 업체 주소를 입력해 주세요.">
+                </div>
+
+                <!-- 대표품목 -->
+                <div class="form-group">
+                  <label for="mfrRegCategory" class="form-label">대표 품목 (식품유형)</label>
+                  <input type="text" id="mfrRegCategory" class="input-form" placeholder="예: 빵류, 즉석섭취식품 등">
+                </div>
+
+                <!-- 매출액 -->
+                <div class="form-group">
+                  <label for="mfrRegSales" class="form-label">연간 매출액</label>
+                  <input type="text" id="mfrRegSales" class="input-form" placeholder="예: 50억원">
+                </div>
+
+                <!-- 주요거래처 -->
+                <div class="form-group">
+                  <label for="mfrRegClients" class="form-label">주요 거래처</label>
+                  <input type="text" id="mfrRegClients" class="input-form" placeholder="예: 롯데마트, 롯데백화점 등">
+                </div>
+
+                <!-- 근무인원 -->
+                <div class="form-group">
+                  <label for="mfrRegEmployees" class="form-label">근무 인원</label>
+                  <input type="text" id="mfrRegEmployees" class="input-form" placeholder="예: 45명">
+                </div>
+
+                <!-- 인증여부 -->
+                <div class="form-group">
+                  <label for="mfrRegCert" class="form-label">식품안전 인증 여부</label>
+                  <input type="text" id="mfrRegCert" class="input-form" placeholder="예: HACCP 인증 완료, ISO22000 등">
+                </div>
+              </div>
+
+              <!-- 3. [관리 정보] 섹션 카드 -->
+              <div class="register-form-card" style="padding: 20px; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 16px; width: 100%;">
+                <h3 style="font-size: 14.5px; font-weight: 800; color: #0f172a; margin: 0 0 4px 0; border-left: 4px solid #0f172a; padding-left: 8px; line-height: 1;">관리 정보</h3>
+
+                <!-- 사업부 -->
+                <div class="form-group">
+                  <label for="mfrRegDiv" class="form-label">사업부 (Div.) <span class="required">*</span></label>
+                  <div class="select-wrapper">
+                    <select id="mfrRegDiv" class="input-form">
+                      <option value="" disabled selected>사업부 선택</option>
+                      <option value="농산">농산</option>
+                      <option value="수산">수산</option>
+                      <option value="축산">축산</option>
+                      <option value="조리">조리</option>
+                      <option value="그로서리">그로서리</option>
+                    </select>
+                    <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                  </div>
+                </div>
+
+                <!-- 업태 -->
+                <div class="form-group">
+                  <label for="mfrRegBiz" class="form-label" style="display: flex; align-items: center; gap: 6px;">
+                    업태 <span class="required">*</span>
+                    <span class="btn-mfr-help-icon" data-type="biz">?</span>
+                  </label>
+                  <div class="select-wrapper">
+                    <select id="mfrRegBiz" class="input-form">
+                      <option value="" disabled selected>업태 선택</option>
+                      <option value="제조가공업">제조가공업</option>
+                      <option value="소분업">소분업</option>
+                      <option value="유통업">유통업</option>
+                      <option value="수입원">수입원</option>
+                    </select>
+                    <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <path d="M6 9l6 6 6-6"/>
+                    </svg>
+                  </div>
+                </div>
+
+                <!-- VHR 유형 -->
+                <div class="form-group">
+                  <label class="form-label" style="display: flex; align-items: center; gap: 6px;">
+                    VHR 유형 <span class="required">*</span>
+                    <span class="btn-mfr-help-icon" data-type="vhr">?</span>
+                  </label>
+                  <div class="segment-control vhr-detailed-control" id="mfrRegVhrSegment">
+                    <label class="segment-item">
+                      <input type="radio" name="mfrRegVhr" value="VHR" checked>
+                      <span class="segment-label">
+                        <span class="lbl-main">VHR</span>
+                        <span class="lbl-sub">빵류, 떡류 등</span>
+                      </span>
+                    </label>
+                    <label class="segment-item">
+                      <input type="radio" name="mfrRegVhr" value="HR">
+                      <span class="segment-label">
+                        <span class="lbl-main">HR</span>
+                        <span class="lbl-sub">즉석조리, 신선편의 등</span>
+                      </span>
+                    </label>
+                    <label class="segment-item">
+                      <input type="radio" name="mfrRegVhr" value="R">
+                      <span class="segment-label">
+                        <span class="lbl-main">R</span>
+                        <span class="lbl-sub">그 외 일반</span>
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- 피점검자 -->
+                <div class="form-group">
+                  <label for="mfrRegManager" class="form-label">피점검자 (현장 담당자) <span class="required">*</span></label>
+                  <input type="text" id="mfrRegManager" class="input-form" placeholder="현장 공장장 또는 품질관리 팀장 성명">
+                </div>
+
+                <div class="form-group" style="margin-top: 6px;">
                   <label class="chk-item" style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; font-weight: 600; color: #475569;">
                     <input type="checkbox" id="mfrRegRecheck">
                     <span class="chk-box"></span>
-                    재점검 대상 업체 여부
+                    <strong>재점검 대상 업체 여부</strong>
                   </label>
                 </div>
-              </div>
 
-              <!-- 2. 등록 일자 -->
-              <div class="form-group">
-                <label for="mfrRegDate" class="form-label">등록 일자 <span class="required">*</span></label>
-                <input type="date" id="mfrRegDate" class="input-form">
-              </div>
-
-              <!-- 3. 점검자 (바이어) -->
-              <div class="form-group">
-                <label for="mfrRegInspector" class="form-label">점검자 <span class="required">*</span></label>
-                <input type="text" id="mfrRegInspector" class="input-form" placeholder="바이어 성명">
-              </div>
-
-              <!-- 4. 제조사 업체명 -->
-              <div class="form-group">
-                <label for="mfrRegName" class="form-label">제조사명 <span class="required">*</span></label>
-                <div style="display: flex; gap: 8px;">
-                  <input type="text" id="mfrRegName" class="input-form" placeholder="우측 [제조사 검색] 버튼을 눌러주세요." readonly style="background: #f8fafc; cursor: not-allowed; flex: 1;">
-                  <button type="button" id="btnMfrSearchMaster" style="height: 38px; padding: 0 16px; background: #0f172a; color: #ffffff; font-weight: 700; border: none; border-radius: 8px; font-size: 12px; cursor: pointer; white-space: nowrap;">제조사 검색</button>
+                <!-- 기타 특이사항 -->
+                <div class="form-group">
+                  <label for="mfrRegMemo" class="form-label">기타 특이사항 (메모)</label>
+                  <textarea id="mfrRegMemo" class="input-form textarea-form" style="height: 90px; resize: none; padding: 12px; line-height: 1.5;" placeholder="기타 공장 설비 현황이나 상담 메모를 적어주세요."></textarea>
                 </div>
               </div>
 
-              <!-- 5. 사업부 (Div.) -->
-              <div class="form-group">
-                <label for="mfrRegDiv" class="form-label">사업부 (Div.) <span class="required">*</span></label>
-                <div class="select-wrapper">
-                  <select id="mfrRegDiv" class="input-form">
+              <!-- 4. [평가 및 개선 결과] 회색 카드 영역 -->
+              <div class="register-form-card" style="padding: 20px; background: #f8fafc; border-radius: 16px; border: 1px solid #cbd5e1; display: flex; flex-direction: column; gap: 20px;">
+                <h3 style="font-size: 14.5px; font-weight: 800; color: #0f172a; margin: 0; border-left: 4px solid #475569; padding-left: 8px; line-height: 1;">평가 및 개선 결과</h3>
+                
+                <!-- [평가 등록: 파일 업로드] -->
+                <div class="upload-sub-section" style="display: flex; flex-direction: column; gap: 10px;">
+                  <h4 style="font-size: 12.5px; font-weight: 700; color: #475569; margin: 0;">[평가 등록: 파일 업로드]</h4>
+                  <div class="image-upload-wrapper">
+                    <!-- Drag & Drop 표준 UX 가이드를 포함한 점검 사진 업로드 존 -->
+                    <label for="mfrRegImageInput" class="upload-trigger-zone" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 24px 20px; background: #ffffff; cursor: pointer; transition: all 0.2s;" ondragover="event.preventDefault(); this.style.borderColor='#0f172a';" ondragleave="this.style.borderColor='#cbd5e1';">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 28px; height: 28px; color: #64748b;">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                      </svg>
+                      <span style="font-size: 12px; color: #475569; font-weight: 700; text-align: center;">드래그 앤 드롭하거나 클릭하여 현장 사진 파일 선택</span>
+                      <span style="font-size: 11px; color: #94a3b8;">* JPG, PNG 규격 이미지 파일 첨부</span>
+                      <input type="file" id="mfrRegImageInput" accept="image/*" multiple style="display: none;">
+                    </label>
+                    <div class="upload-preview-grid" id="mfrRegImagePreviewGrid" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
+                      <!-- 업로드 이미지 미리보기 -->
+                    </div>
+                  </div>
+                </div>
+
+                <!-- [개선 조치: 파일 업로드] -->
+                <div class="upload-sub-section" style="display: flex; flex-direction: column; gap: 10px; border-top: 1px dashed #cbd5e1; padding-top: 16px;">
+                  <h4 style="font-size: 12.5px; font-weight: 700; color: #475569; margin: 0;">[개선 조치: 파일 업로드]</h4>
+                  <div class="file-upload-wrapper">
+                    <!-- Drag & Drop 가이드를 적용한 개선조치 파일 업로드 존 -->
+                    <label for="mfrRegFileInput" class="upload-trigger-zone" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 24px 20px; background: #ffffff; cursor: pointer; transition: all 0.2s;" ondragover="event.preventDefault(); this.style.borderColor='#0f172a';" ondragleave="this.style.borderColor='#cbd5e1';">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 28px; height: 28px; color: #64748b;">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                      </svg>
+                      <span style="font-size: 12px; color: #475569; font-weight: 700; text-align: center;">드래그 앤 드롭하거나 클릭하여 개선조치 파일 선택</span>
+                      <span style="font-size: 11px; color: #94a3b8;">* PDF, DOCX, XLSX, ZIP 형식 문서 첨부</span>
+                      <input type="file" id="mfrRegFileInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.hwp,.txt,.zip" multiple style="display: none;">
+                    </label>
+                    <div class="upload-preview-grid" id="mfrRegFilePreviewGrid" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;">
+                      <!-- 업로드 파일 목록 Chip -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- 하단 Sticky 평가 판정 및 폼 액션 고정 패널 -->
+          <div class="detail-scoring-panel" id="mfrRegisterActionsBar" style="position: absolute; bottom: 0; left: 0; width: 100%; z-index: 50; background: #ffffff; border-top: 1px solid #e2e8f0; padding: 16px 20px; box-shadow: 0 -4px 16px rgba(0,0,0,0.08); display: none; gap: 8px; box-sizing: border-box; border-bottom-left-radius: 47px; border-bottom-right-radius: 47px; flex-direction: row !important;">
+            <button type="button" class="btn-scoring-draft" id="btnMfrSaveDraft" style="flex: 1; height: 50px !important; cursor: pointer; border: none; font-size: 13.5px; font-weight: 600; border-radius: 12px; transition: all 0.2s;">임시 저장</button>
+            <button type="button" class="btn-scoring-submit" id="btnMfrSubmitRegister" style="flex: 2; height: 50px !important; margin-top: 0 !important; cursor: pointer; border: none; font-size: 13.5px; font-weight: 600; border-radius: 12px; transition: all 0.2s;">등록 완료</button>
+          </div>
+        </div> <!-- #mfr-register-view close -->
+
+        <!-- 신규 업체 등록 및 검색 독립 뷰 페이지 -->
+        <div id="master-search-view" class="view-container" style="display: none; flex-direction: column; height: 100%; overflow: hidden; position: relative; background: #f8fafc; padding: 0 !important;">
+          <!-- 고정 헤더 -->
+          <header class="main-header buyer-header" style="flex-shrink: 0; background: #ffffff; border-bottom: 1px solid #e2e8f0; position: relative;">
+            <button class="btn-icon" id="btnBackFromMasterSearch" title="이전으로 이동">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 20px; height: 20px; color: #0f172a;">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+              </svg>
+            </button>
+            <h2 class="header-title" id="master-search-page-title" style="font-size: 16px; font-weight: 800; color: #0f172a;">신규 업체 등록</h2>
+            <div style="width: 32px; height: 32px;"></div>
+          </header>
+
+          <!-- 상단 탭 전환 바 (고정) -->
+          <div class="search-tab-bar" style="display: flex; background: #e2e8f0; border-radius: 12px; padding: 4px; margin: 16px 20px 8px 20px; gap: 4px; flex-shrink: 0;">
+            <button type="button" class="search-tab-btn active" id="tabSearchCompany" style="flex: 1; height: 42px; border: none; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.25s;">업체 검색</button>
+            <button type="button" class="search-tab-btn" id="tabRegisterCompany" style="flex: 1; height: 42px; border: none; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.25s;">신규 업체 등록</button>
+          </div>
+
+          <!-- 스크롤 가능한 본문 영역 -->
+          <div class="master-search-content" style="flex: 1; overflow-y: auto; padding: 12px 20px 100px 20px; display: flex; flex-direction: column; gap: 16px;">
+            
+            <!-- 탭 콘텐츠 1: 업체 검색 영역 -->
+            <div id="searchTabContent" style="display: flex; flex-direction: column; gap: 16px; width: 100%;">
+              <!-- 검색 영역 및 결과 리스트 통합 묶음 카드 (복원) -->
+              <div style="background: #ffffff; border-radius: 16px; padding: 20px; box-shadow: var(--shadow-sm); border: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 16px; width: 100%;">
+                <p style="font-size: 13px; color: #64748b; margin: 0; line-height: 1.4;">
+                  백화점 연동 DB에서 업체를 검색 후 선택해 주세요.
+                </p>
+                
+                <!-- 검색창 -->
+                <div class="search-box-wrapper" style="width: 100%;">
+                  <input type="text" id="masterSearchInput" class="input-form" placeholder="업체명 또는 사업자등록번호로 검색..." style="height: 46px; font-size: 14px; padding-left: 16px; border-radius: 10px; border: 1px solid #cbd5e1; width: 100%;">
+                </div>
+
+                <!-- 검색 결과 그리드 영역 -->
+                <div style="border-top: 1px solid #f1f5f9; padding-top: 16px; display: flex; flex-direction: column; gap: 12px; width: 100%;">
+                  <h3 style="font-size: 14px; font-weight: 700; color: #0f172a; margin: 0;">업체 리스트</h3>
+                  <div id="masterSearchCardGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; max-height: 35vh; overflow-y: auto; padding: 4px;">
+                    <!-- 업체 리스트 동적 카드 렌더링 -->
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 탭 콘텐츠 2: 신규 업체 등록 폼 영역 (초기 숨김) -->
+            <div id="registerTabContent" style="display: none; background: #ffffff; border-radius: 16px; padding: 20px; border: 1px solid #e2e8f0; box-shadow: var(--shadow-sm); flex-direction: column; gap: 16px; margin-bottom: 20px; width: 100%;">
+              <h3 style="font-size: 14px; font-weight: 700; color: #0f172a; margin: 0 0 2px 0;">신규 업체 등록</h3>
+              
+              <!-- 1. 신규 업체명 -->
+              <div class="form-group" style="margin: 0; width: 100%;">
+                <label class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">신규 업체명 <span class="required">*</span></label>
+                <input type="text" id="newMasterName" class="input-form" placeholder="정확한 업체명을 입력해 주세요." style="height: 42px; margin-bottom: 8px;">
+                <button type="button" id="btnCheckMasterName" style="width: 100%; height: 38px; background: #e2e8f0; color: #475569; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; outline: none;">업체명 중복확인</button>
+              </div>
+
+              <!-- 2. 신규 사업자등록번호 -->
+              <div class="form-group" style="margin: 0; width: 100%;">
+                <label class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">사업자등록번호 <span class="required">*</span></label>
+                <input type="text" id="newMasterLicense" class="input-form" placeholder="10자리 숫자만 입력 (예: 120-81-22456)" style="height: 42px; margin-bottom: 8px;">
+                <button type="button" id="btnCheckMasterLicense" style="width: 100%; height: 38px; background: #e2e8f0; color: #475569; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; outline: none;">사업자번호 중복확인</button>
+              </div>
+
+              <!-- 3. 대표자명 -->
+              <div class="form-group" style="margin: 0; width: 100%;">
+                <label class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">대표자명</label>
+                <input type="text" id="newMasterOwner" class="input-form" placeholder="대표자 성명" style="height: 42px;">
+              </div>
+
+              <!-- 4. 소재지 주소 -->
+              <div class="form-group" style="margin: 0; width: 100%;">
+                <label class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">소재지 주소</label>
+                <input type="text" id="newMasterAddress" class="input-form" placeholder="업체 주소를 입력해 주세요." style="height: 42px;">
+              </div>
+
+              <!-- 5. 대표 품목 -->
+              <div class="form-group" style="margin: 0; width: 100%;">
+                <label class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">대표 품목</label>
+                <input type="text" id="newMasterCategory" class="input-form" placeholder="예: 빵류, 즉석식품, 신선농산물 등" style="height: 42px;">
+              </div>
+
+              <!-- 6. 점검 사업부 선택 -->
+              <div class="form-group" style="margin: 0; width: 100%;">
+                <label class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">점검 사업부 <span class="required">*</span></label>
+                <div class="select-wrapper" style="width: 100%;">
+                  <select id="newMasterDiv" class="input-form" style="height: 42px;">
                     <option value="" disabled selected>사업부 선택</option>
                     <option value="농산">농산</option>
                     <option value="수산">수산</option>
@@ -1068,14 +1382,14 @@
                 </div>
               </div>
 
-              <!-- 6. 업태 -->
-              <div class="form-group">
-                <label for="mfrRegBiz" class="form-label" style="display: flex; align-items: center; gap: 6px;">
-                  업태 <span class="required">*</span>
-                  <span class="btn-mfr-help-icon" data-type="biz">?</span>
+              <!-- 7. 업태 -->
+              <div class="form-group" style="margin: 0; width: 100%;">
+                <label class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                  업태 
+                  <button type="button" class="btn-info-badge" style="background: #e2e8f0; border: none; width: 14px; height: 14px; border-radius: 50%; cursor: pointer; color: #475569; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; font-family: sans-serif; padding: 0; line-height: 1;" title="업태 설명">?</button>
                 </label>
-                <div class="select-wrapper">
-                  <select id="mfrRegBiz" class="input-form">
+                <div class="select-wrapper" style="width: 100%;">
+                  <select id="newMasterBiz" class="input-form" style="height: 42px;">
                     <option value="" disabled selected>업태 선택</option>
                     <option value="제조가공업">제조가공업</option>
                     <option value="소분업">소분업</option>
@@ -1088,259 +1402,7 @@
                 </div>
               </div>
 
-              <!-- 7. VHR 유형 -->
-              <div class="form-group">
-                <label class="form-label" style="display: flex; align-items: center; gap: 6px;">
-                  VHR 유형 <span class="required">*</span>
-                  <span class="btn-mfr-help-icon" data-type="vhr">?</span>
-                </label>
-                <div class="segment-control vhr-detailed-control" id="mfrRegVhrSegment">
-                  <label class="segment-item">
-                    <input type="radio" name="mfrRegVhr" value="VHR" checked>
-                    <span class="segment-label">
-                      <span class="lbl-main">VHR</span>
-                      <span class="lbl-sub">빵류, 떡류 등</span>
-                    </span>
-                  </label>
-                  <label class="segment-item">
-                    <input type="radio" name="mfrRegVhr" value="HR">
-                    <span class="segment-label">
-                      <span class="lbl-main">HR</span>
-                      <span class="lbl-sub">즉석조리, 신선편의 등</span>
-                    </span>
-                  </label>
-                  <label class="segment-item">
-                    <input type="radio" name="mfrRegVhr" value="R">
-                    <span class="segment-label">
-                      <span class="lbl-main">R</span>
-                      <span class="lbl-sub">그 외 일반</span>
-                    </span>
-                  </label>
-                </div>
-              </div>
-
-              <!-- 8. 대표자명 -->
-              <div class="form-group">
-                <label for="mfrRegOwner" class="form-label">대표자명</label>
-                <input type="text" id="mfrRegOwner" class="input-form" placeholder="대표자 성명">
-              </div>
-
-              <!-- 9. 영업인허가번호 (필수 사업자등록번호로 활용) -->
-              <div class="form-group">
-                <label for="mfrRegLicense" class="form-label">사업자등록번호 (영업인허가번호) <span class="required">*</span></label>
-                <input type="text" id="mfrRegLicense" class="input-form" placeholder="사업자등록번호(10자리) 입력 (필수)" readonly style="background: #f8fafc; cursor: not-allowed;">
-              </div>
-
-              <!-- 10. 주소 -->
-              <div class="form-group">
-                <label for="mfrRegAddress" class="form-label">소재지 주소</label>
-                <input type="text" id="mfrRegAddress" class="input-form" placeholder="제조공장 및 업체 주소를 입력해 주세요.">
-              </div>
-
-              <!-- 11. 대표품목 (식품유형) -->
-              <div class="form-group">
-                <label for="mfrRegCategory" class="form-label">대표 품목 (식품유형)</label>
-                <input type="text" id="mfrRegCategory" class="input-form" placeholder="예: 빵류, 즉석섭취식품 등">
-              </div>
-
-              <!-- 12. 매출액 -->
-              <div class="form-group">
-                <label for="mfrRegSales" class="form-label">연간 매출액</label>
-                <input type="text" id="mfrRegSales" class="input-form" placeholder="예: 50억원">
-              </div>
-
-              <!-- 13. 주요거래처 -->
-              <div class="form-group">
-                <label for="mfrRegClients" class="form-label">주요 거래처</label>
-                <input type="text" id="mfrRegClients" class="input-form" placeholder="예: 롯데마트, 롯데백화점 등">
-              </div>
-
-              <!-- 14. 근무인원 -->
-              <div class="form-group">
-                <label for="mfrRegEmployees" class="form-label">근무 인원</label>
-                <input type="text" id="mfrRegEmployees" class="input-form" placeholder="예: 45명">
-              </div>
-
-              <!-- 15. 인증여부 -->
-              <div class="form-group">
-                <label for="mfrRegCert" class="form-label">식품안전 인증 여부</label>
-                <input type="text" id="mfrRegCert" class="input-form" placeholder="예: HACCP 인증 완료, ISO22000 등">
-              </div>
-
-              <!-- 16. 피점검자 (담당자) -->
-              <div class="form-group">
-                <label for="mfrRegManager" class="form-label">피점검자 (현장 담당자) <span class="required">*</span></label>
-                <input type="text" id="mfrRegManager" class="input-form" placeholder="현장 공장장 또는 품질관리 팀장 성명">
-              </div>
-
-              <!-- 17. 기타 (종합 메모) -->
-              <div class="form-group">
-                <label for="mfrRegMemo" class="form-label">기타 특이사항 (메모)</label>
-                <textarea id="mfrRegMemo" class="input-form textarea-form" style="height: 90px; resize: none; padding: 12px; line-height: 1.5;" placeholder="기타 공장 설비 현황이나 상담 메모를 적어주세요."></textarea>
-              </div>
-
-              <!-- 18. 현장 점검 사진 첨부 -->
-              <div class="form-group">
-                <label class="form-label">현장 점검 사진 첨부</label>
-                <div class="image-upload-wrapper">
-                  <label for="mfrRegImageInput" class="upload-trigger-zone" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 16px 20px; background: #ffffff; cursor: pointer; transition: all 0.2s;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 24px; height: 24px; color: #64748b;">
-                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                      <circle cx="12" cy="13" r="4"/>
-                    </svg>
-                    <span style="font-size: 12px; color: #64748b; font-weight: 500;">사진 추가 (직접 촬영/파일 선택)</span>
-                    <input type="file" id="mfrRegImageInput" accept="image/*" multiple style="display: none;">
-                  </label>
-                  <div class="upload-preview-grid" id="mfrRegImagePreviewGrid" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
-                    <!-- 업로드 이미지 미리보기 -->
-                  </div>
-                </div>
-              </div>
-
-              <!-- 19. 개선조치 파일 첨부 -->
-              <div class="form-group">
-                <label class="form-label">개선조치 파일 첨부</label>
-                <div class="file-upload-wrapper">
-                  <label for="mfrRegFileInput" class="upload-trigger-zone" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 16px 20px; background: #ffffff; cursor: pointer; transition: all 0.2s;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 24px; height: 24px; color: #64748b;">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                      <polyline points="14 2 14 8 20 8"/>
-                      <line x1="16" y1="13" x2="8" y2="13"/>
-                      <line x1="16" y1="17" x2="8" y2="17"/>
-                    </svg>
-                    <span style="font-size: 12px; color: #64748b; font-weight: 500;">개선조치 파일 추가 (PDF, DOCX, XLSX 등)</span>
-                    <input type="file" id="mfrRegFileInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.hwp,.txt" multiple style="display: none;">
-                  </label>
-                  <div class="upload-preview-grid" id="mfrRegFilePreviewGrid" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;">
-                    <!-- 업로드 파일 목록 Chip -->
-                  </div>
-                </div>
-              </div>
-
-              <div class="form-actions" style="margin-top: 20px; display: flex; gap: 10px;">
-                <button type="button" class="btn-scoring-draft" id="btnMfrSaveDraft" style="flex: 1; height: 50px; border-radius: 12px; border: 1px solid #cbd5e1; background: #ffffff; color: #475569; font-weight: 700; cursor: pointer; transition: all 0.2s;">임시 저장</button>
-                <button type="button" class="btn-submit-register" id="btnMfrSubmitRegister" style="flex: 2; height: 50px; margin-top: 0; background: #0f172a; border-radius: 12px; font-weight: 700; color: #ffffff; cursor: pointer; transition: all 0.2s;">등록 완료</button>
-              </div>
-
-            </div> <!-- .register-form-container close -->
-          </div> <!-- .mfr-register-content close -->
-        </div> <!-- #mfr-register-view close -->
-
-        <!-- 신규 업체 등록 및 검색 독립 뷰 페이지 -->
-        <div id="master-search-view" class="view-container" style="display: none; flex-direction: column;">
-          <header class="section-header" style="justify-content: flex-start; gap: 15px; margin-bottom: 20px;">
-            <button class="btn-back" id="btnBackFromMasterSearch" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid #e2e8f0; background: #ffffff; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm); transition: all 0.2s;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 20px; height: 20px; color: #0f172a;">
-                <path d="M19 12H5M12 19l-7-7 7-7"/>
-              </svg>
-            </button>
-            <h2 class="section-title" id="master-search-page-title" style="margin: 0; font-size: 18px; font-weight: 800; color: #0f172a;">신규 업체 등록</h2>
-          </header>
-
-          <!-- 상단 탭 전환 바 -->
-          <div class="search-tab-bar" style="display: flex; background: #f1f5f9; border-radius: 12px; padding: 4px; margin-bottom: 20px; gap: 4px;">
-            <button type="button" class="search-tab-btn active" id="tabSearchCompany" style="flex: 1; height: 42px; border: none; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.25s;">업체 검색</button>
-            <button type="button" class="search-tab-btn" id="tabRegisterCompany" style="flex: 1; height: 42px; border: none; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.25s;">신규 업체 등록</button>
-          </div>
-
-          <div class="master-search-content" style="display: flex; flex-direction: column; flex: 1;">
-            
-            <!-- 탭 콘텐츠 1: 업체 검색 영역 -->
-            <div id="searchTabContent" style="display: flex; flex-direction: column; gap: 20px;">
-              <!-- 검색 영역 및 결과 리스트 통합 묶음 카드 -->
-              <div style="background: #ffffff; border-radius: 16px; padding: 20px; box-shadow: var(--shadow-sm); border: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 16px;">
-                <p style="font-size: 13px; color: #64748b; margin: 0; line-height: 1.4;">
-                  백화점 연동 DB에서 업체를 검색 후 선택해 주세요.
-                </p>
-                
-                <!-- 검색창 -->
-                <div class="search-box-wrapper" style="width: 100%;">
-                  <input type="text" id="masterSearchInput" class="input-form" placeholder="업체명 또는 사업자등록번호로 검색..." style="height: 46px; font-size: 14px; padding-left: 16px; border-radius: 10px; border: 1px solid #cbd5e1; width: 100%;">
-                </div>
-
-                <!-- 검색 결과 그리드 영역 -->
-                <div style="border-top: 1px solid #f1f5f9; padding-top: 16px; display: flex; flex-direction: column; gap: 12px;">
-                  <h3 style="font-size: 14px; font-weight: 700; color: #0f172a; margin: 0;">업체 리스트</h3>
-                  <div id="masterSearchCardGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; max-height: 35vh; overflow-y: auto; padding: 4px;">
-                    <!-- 업체 리스트 동적 카드 렌더링 -->
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 탭 콘텐츠 2: 신규 업체 등록 폼 영역 (초기 숨김) -->
-            <div id="registerTabContent" style="display: none; background: #ffffff; border-radius: 16px; padding: 20px; box-shadow: var(--shadow-sm); border: 1px solid #f1f5f9; flex-direction: column; gap: 18px;">
-              <h3 style="font-size: 14px; font-weight: 700; color: #0f172a; margin: 0 0 2px 0;">신규 업체 등록</h3>
-              
-              <!-- 1. 신규 업체명 -->
-              <div class="form-group" style="margin: 0; width: 100%;">
-                <label class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">신규 업체명 <span class="required">*</span></label>
-                <input type="text" id="newMasterName" class="input-form" placeholder="정확한 업체명을 입력해 주세요." style="height: 42px; margin-bottom: 8px;">
-                <button type="button" id="btnCheckMasterName" style="width: 100%; height: 38px; background: #e2e8f0; color: #475569; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; outline: none;">업체명 중복확인</button>
-                <span id="nameCheckFeedback" style="font-size: 11px; margin-top: 5px; display: block;"></span>
-              </div>
-
-
-
-              <!-- 2. 사업자등록번호 (중복확인) -->
-              <div class="form-group" style="margin: 0; width: 100%;">
-                <label class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">사업자등록번호 <span class="required">*</span></label>
-                <input type="text" id="newMasterLicense" class="input-form" placeholder="10자리 숫자 입력 (예: 000-00-00000)" style="height: 42px; margin-bottom: 8px;">
-                <button type="button" id="btnCheckMasterLicense" style="width: 100%; height: 38px; background: #e2e8f0; color: #475569; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; outline: none;">사업자번호 중복확인</button>
-                <span id="licenseCheckFeedback" style="font-size: 11px; margin-top: 5px; display: block;"></span>
-              </div>
-
-              <!-- 3. 대표자명 -->
-              <div class="form-group" style="margin: 0; width: 100%;">
-                <label class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">대표자명</label>
-                <input type="text" id="newMasterOwner" class="input-form" placeholder="대표자 성명" style="height: 42px;">
-              </div>
-
-              <!-- 4. 소재지 주소 -->
-              <div class="form-group" style="margin: 0; width: 100%;">
-                <label class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">소재지 주소</label>
-                <input type="text" id="newMasterAddress" class="input-form" placeholder="소재지 주소 입력" style="height: 42px;">
-              </div>
-
-              <!-- 5. 사업부 -->
-              <div class="form-group" style="margin: 0; width: 100%;">
-                <label class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">사업부</label>
-                <div class="select-wrapper" style="width: 100%;">
-                  <select id="newMasterDiv" class="input-form" style="height: 42px;">
-                    <option value="">사업부 선택</option>
-                    <option value="농산">농산</option>
-                    <option value="수산">수산</option>
-                    <option value="축산">축산</option>
-                    <option value="조리">조리</option>
-                    <option value="그로서리">그로서리</option>
-                  </select>
-                  <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="top: 14px;">
-                    <path d="M6 9l6 6 6-6"/>
-                  </svg>
-                </div>
-              </div>
-
-              <!-- 6. 업태 -->
-              <div class="form-group" style="margin: 0; width: 100%;">
-                <label class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px; display: inline-flex; align-items: center; gap: 4px;">
-                  업태 
-                  <button type="button" class="btn-info-badge" style="background: #e2e8f0; border: none; width: 14px; height: 14px; border-radius: 50%; cursor: pointer; color: #475569; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; font-family: sans-serif; padding: 0; line-height: 1;" title="업태 설명">?</button>
-                </label>
-                <div class="select-wrapper" style="width: 100%;">
-                  <select id="newMasterBiz" class="input-form" style="height: 42px;">
-                    <option value="">업태 선택</option>
-                    <option value="제조가공업">제조가공업</option>
-                    <option value="소분업">소분업</option>
-                    <option value="유통업">유통업</option>
-                    <option value="수입원">수입원</option>
-                  </select>
-                  <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="top: 14px;">
-                    <path d="M6 9l6 6 6-6"/>
-                  </svg>
-                </div>
-              </div>
-
-              <!-- 7. VHR 유형 (앱 공통 탭/세그먼트 디자인 통일) -->
+              <!-- 8. VHR 유형 -->
               <div class="form-group" style="margin: 0; width: 100%;">
                 <label class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 8px; display: inline-flex; align-items: center; gap: 4px;">
                   VHR 유형 <span class="required">*</span>
@@ -1370,12 +1432,13 @@
                   </label>
                 </div>
               </div>
-
-              <div class="register-form-actions" style="display: flex; gap: 8px; margin-top: 10px; width: 100%;">
-                <button type="button" id="btnCreateNewMasterDraft" style="flex: 1; height: 48px; background: #ffffff; color: #475569; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s;">임시저장</button>
-                <button type="button" id="btnCreateNewMasterPage" style="flex: 2; height: 48px; background: #0f172a; color: #ffffff; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; margin-top: 0;">신규 업체 등록 및 자동 선택</button>
-              </div>
             </div>
+          </div>
+
+          <!-- 하단 Sticky 신규 마스터 등록 CTA 버튼 그룹 (고정) -->
+          <div class="detail-scoring-panel" id="masterRegisterActionsBar" style="position: absolute; bottom: 0; left: 0; width: 100%; z-index: 50; background: #ffffff; border-top: 1px solid #e2e8f0; padding: 16px 20px; box-shadow: 0 -4px 16px rgba(0,0,0,0.08); display: none; gap: 8px; box-sizing: border-box; border-bottom-left-radius: 47px; border-bottom-right-radius: 47px; flex-direction: row !important;">
+            <button type="button" class="btn-scoring-draft" id="btnCreateNewMasterDraft" style="flex: 1; height: 50px !important; cursor: pointer; border: none; font-size: 13.5px; font-weight: 600; border-radius: 12px; transition: all 0.2s;">임시저장</button>
+            <button type="button" class="btn-scoring-submit" id="btnCreateNewMasterPage" style="flex: 2; height: 50px !important; margin-top: 0 !important; cursor: pointer; border: none; font-size: 13.5px; font-weight: 600; border-radius: 12px; transition: all 0.2s;">신규 업체 등록 및 자동 선택</button>
           </div>
         </div>
 
@@ -1391,6 +1454,7 @@
 
   <!-- 알림 토글 토스트 메시지 -->
   <div class="toast" id="toast">새로운 알림이 없습니다.</div>
+
 
   <!-- 결재함 모달 시뮬레이터 -->
   <div class="modal-overlay" id="approvalModal">

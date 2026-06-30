@@ -106,7 +106,12 @@ const buyerMockData = [
 ];
 
 const mfrMockData = [
-  { id: 1, buyerId: 'BUYER_DEPT_01', type: 'OEM', name: '우리가공식품', div: '농산', biz: '제조가공업', vhr: 'R', owner: '김제조', licenseNo: '123-45-67890', regDate: '2026-06-15', inspector: '김바이어', status: 'pending', partner: '주식회사 푸드링크', recheck: true }
+  { id: 1, buyerId: 'BUYER_DEPT_01', type: 'OEM', name: '우리가공식품', div: '농산', biz: '제조가공업', vhr: 'R', owner: '김제조', licenseNo: '123-45-67890', regDate: '2026-06-15', inspector: '김바이어', status: 'pending', partner: '주식회사 푸드링크', recheck: true },
+  { id: 2, buyerId: 'BUYER_DEPT_01', type: 'GENERAL', name: '삼양푸드스퀘어', div: '수산', biz: '소분업', vhr: 'HR', owner: '김철수', licenseNo: '104-12-56789', regDate: '2026-06-20', inspector: '박바이어', status: 'completed', partner: '', recheck: false },
+  { id: 3, buyerId: 'BUYER_DEPT_01', type: 'OEM', name: '한양축산푸드', div: '축산', biz: '제조가공업', vhr: 'VHR', owner: '이우성', licenseNo: '112-34-56789', regDate: '2026-06-21', inspector: '최바이어', status: 'pending', partner: '롯데조리유통', recheck: true },
+  { id: 4, buyerId: 'BUYER_DEPT_01', type: 'GENERAL', name: '신선원 그로서리', div: '그로서리', biz: '유통업', vhr: 'R', owner: '오영수', licenseNo: '135-24-68102', regDate: '2026-06-22', inspector: '이바이어', status: 'completed', partner: '', recheck: false },
+  { id: 5, buyerId: 'BUYER_DEPT_01', type: 'OEM', name: '태평양수산가공', div: '수산', biz: '제조가공업', vhr: 'HR', owner: '정해인', licenseNo: '109-88-77665', regDate: '2026-06-23', inspector: '강바이어', status: 'completed', partner: '(주)대현수산', recheck: false },
+  { id: 6, buyerId: 'BUYER_DEPT_01', type: 'GENERAL', name: '웰빙유기농식품', div: '농산', biz: '수입원', vhr: 'R', owner: '강호동', licenseNo: '101-02-03040', regDate: '2026-06-25', inspector: '송바이어', status: 'pending', partner: '', recheck: true }
 ];
 
 const companyMasterList = [
@@ -994,11 +999,128 @@ function initMfrEval() {
   const btnMfrBackToEvalFromReg = document.getElementById('btnMfrBackToEvalFromReg');
   const btnMfrSubmitRegister = document.getElementById('btnMfrSubmitRegister');
   const btnMfrSaveDraft = document.getElementById('btnMfrSaveDraft');
+  const mfrSearchInput = document.getElementById('mfrSearchInput');
+
+  // 탭 제어 엘리먼트
+  const tabMfrRegSearch = document.getElementById('tabMfrRegSearch');
+  const tabMfrRegForm = document.getElementById('tabMfrRegForm');
+  const mfrRegSearchTab = document.getElementById('mfrRegSearchTab');
+  const mfrRegFormTab = document.getElementById('mfrRegFormTab');
+  const mfrRegisterActionsBar = document.getElementById('mfrRegisterActionsBar');
+  const mfrRegSearchInput = document.getElementById('mfrRegSearchInput');
+
+  // 탭 전환 이벤트 리스너
+  tabMfrRegSearch?.addEventListener('click', () => {
+    tabMfrRegSearch.classList.add('active');
+    tabMfrRegForm?.classList.remove('active');
+    if (mfrRegSearchTab) mfrRegSearchTab.style.display = 'flex';
+    if (mfrRegFormTab) mfrRegFormTab.style.display = 'none';
+    if (mfrRegisterActionsBar) mfrRegisterActionsBar.style.display = 'none';
+  });
+
+  tabMfrRegForm?.addEventListener('click', () => {
+    tabMfrRegForm.classList.add('active');
+    tabMfrRegSearch?.classList.remove('active');
+    if (mfrRegSearchTab) mfrRegSearchTab.style.display = 'none';
+    if (mfrRegFormTab) mfrRegFormTab.style.display = 'flex';
+    if (mfrRegisterActionsBar) mfrRegisterActionsBar.style.display = 'flex';
+  });
+
+  // 제조사 검색 필터 및 렌더링
+  const mfrMasterData = [
+    { name: "(주)한영식품", license: "120-81-22456", category: "어묵류", address: "부산시 사하구 장림동 12", owner: "한영수", vhr: "VHR" },
+    { name: "(주)우일푸드", license: "204-85-11982", category: "과자류", address: "경기도 안산시 단원구 성곡동 45", owner: "우태일", vhr: "HR" },
+    { name: "(주)진성제과", license: "113-86-99304", category: "빵류", address: "서울시 금천구 가산동 29", owner: "진창성", vhr: "VHR" },
+    { name: "동해수산", license: "402-81-33290", category: "수산가공품", address: "강원도 강릉시 주문진읍 78", owner: "이동해", vhr: "R" },
+    { name: "(주)동원아이에프", license: "128-86-00491", category: "조미김", address: "충남 천안시 서북구 성거읍 5", owner: "김동원", vhr: "HR" }
+  ];
+
+  function renderMfrRegSearchCards() {
+    const grid = document.getElementById('mfrRegSearchCardGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    const query = mfrRegSearchInput ? mfrRegSearchInput.value.trim().toLowerCase() : '';
+    
+    const filtered = mfrMasterData.filter(item => {
+      return item.name.toLowerCase().includes(query) || item.license.replace(/-/g, '').includes(query.replace(/-/g, ''));
+    });
+
+    if (filtered.length === 0) {
+      grid.innerHTML = `
+        <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; text-align: center;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 42px; height: 42px; color: #94a3b8; margin-bottom: 8px;">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <span style="font-size: 13px; color: #64748b; font-weight: 500;">검색 결과가 없습니다.</span>
+        </div>
+      `;
+      return;
+    }
+
+    filtered.forEach(item => {
+      const card = document.createElement('div');
+      card.className = 'eval-card';
+      card.style.cssText = 'background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; cursor: pointer; transition: all 0.2s; position: relative; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--shadow-sm);';
+      
+      // VHR 뱃지 클래스
+      const vhrStyle = item.vhr === 'VHR' ? 'background: #fef2f2; color: #ef4444; border: 1px solid #fee2e2;' : (item.vhr === 'HR' ? 'background: #fffbeb; color: #d97706; border: 1px solid #fef3c7;' : 'background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;');
+
+      card.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+          <h4 style="font-size: 14px; font-weight: 700; color: #0f172a; margin: 0;">${item.name}</h4>
+          <span style="font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px; ${vhrStyle}">${item.vhr}</span>
+        </div>
+        <div style="font-size: 12px; color: #64748b; display: flex; flex-direction: column; gap: 2px;">
+          <span>대표자: ${item.owner}</span>
+          <span>사업자번호: ${item.license}</span>
+          <span style="font-size: 11px; color: #94a3b8; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">소재지: ${item.address}</span>
+        </div>
+      `;
+
+      card.addEventListener('click', () => {
+        // 데이터 바인딩
+        const mfrRegName = document.getElementById('mfrRegName');
+        const mfrRegLicense = document.getElementById('mfrRegLicense');
+        const mfrRegOwner = document.getElementById('mfrRegOwner');
+        const mfrRegAddress = document.getElementById('mfrRegAddress');
+        const mfrRegCategory = document.getElementById('mfrRegCategory');
+        const mfrRegDate = document.getElementById('mfrRegDate');
+
+        if (mfrRegName) mfrRegName.value = item.name;
+        if (mfrRegLicense) mfrRegLicense.value = item.license;
+        if (mfrRegOwner) mfrRegOwner.value = item.owner;
+        if (mfrRegAddress) mfrRegAddress.value = item.address;
+        if (mfrRegCategory) mfrRegCategory.value = item.category;
+        
+        // 날짜 오늘로 디폴트 채우기
+        if (mfrRegDate) {
+          const today = new Date().toISOString().substring(0, 10);
+          mfrRegDate.value = today;
+        }
+
+        // VHR 라디오 연동
+        const vhrRadios = document.querySelectorAll('input[name="mfrRegVhr"]');
+        vhrRadios.forEach(radio => {
+          if (radio.value === item.vhr || (item.vhr === 'R' && radio.value === 'R')) {
+            radio.checked = true;
+          }
+        });
+
+        showToast(`"${item.name}" 정보가 동적으로 채워졌습니다.`);
+        tabMfrRegForm?.click(); // 탭 이동
+      });
+
+      grid.appendChild(card);
+    });
+  }
+
+  mfrRegSearchInput?.addEventListener('input', renderMfrRegSearchCards);
   
   menuFactory?.addEventListener('click', () => {
     if (homeView) homeView.style.display = 'none';
     if (mfrEvalView) mfrEvalView.style.display = 'flex';
-    switchMfrTab('eval');
+    renderMfrCompanyList();
   });
 
   btnMfrBackToHome?.addEventListener('click', () => {
@@ -1006,36 +1128,23 @@ function initMfrEval() {
     if (homeView) homeView.style.display = 'flex';
   });
 
-  const btnMfrTabEval = document.getElementById('btn-mfr-tab-eval');
-  const btnMfrTabCompany = document.getElementById('btn-mfr-tab-company');
-  btnMfrTabEval?.addEventListener('click', () => switchMfrTab('eval'));
-  btnMfrTabCompany?.addEventListener('click', () => switchMfrTab('company'));
-
-  function switchMfrTab(tabType) {
-    const evalContent = document.getElementById('mfr-tab-content-eval');
-    const companyContent = document.getElementById('mfr-tab-content-company');
-    if (tabType === 'eval') {
-      btnMfrTabEval?.classList.add('active');
-      btnMfrTabCompany?.classList.remove('active');
-      if (evalContent) evalContent.style.display = 'block';
-      if (companyContent) companyContent.style.display = 'none';
-      renderMfrEvalList();
-    } else {
-      btnMfrTabEval?.classList.remove('active');
-      btnMfrTabCompany?.classList.add('active');
-      if (evalContent) evalContent.style.display = 'none';
-      if (companyContent) companyContent.style.display = 'block';
-      renderMfrCompanyList();
-    }
-  }
+  // 실시간 검색 기능 연동
+  mfrSearchInput?.addEventListener('input', () => {
+    renderMfrCompanyList();
+  });
 
   btnMfrHeaderAdd?.addEventListener('click', () => {
     if (mfrEvalView) mfrEvalView.style.display = 'none';
     if (mfrRegisterView) mfrRegisterView.style.display = 'flex';
-    document.getElementById('txt-mfr-register-title').textContent = '신규 제조사 등록';
+    document.getElementById('txt-mfr-register-title').textContent = '제조사 업체 등록';
     if (btnMfrSubmitRegister) btnMfrSubmitRegister.dataset.mode = 'new';
+    
+    // 신규 등록 시 기본적으로 '업체 검색' 탭 활성화 및 바인딩
+    tabMfrRegSearch?.click();
+    if (mfrRegSearchInput) mfrRegSearchInput.value = '';
+    renderMfrRegSearchCards();
+    
     document.getElementById('mfrRegOemSubSection').style.display = 'flex';
-    bindBuyerCompaniesToMfrSelect();
   });
 
   btnMfrBackToEvalFromReg?.addEventListener('click', () => {
@@ -1055,14 +1164,14 @@ function initMfrEval() {
     showToast('제조사 등록이 완료되었습니다.');
     if (mfrRegisterView) mfrRegisterView.style.display = 'none';
     if (mfrEvalView) mfrEvalView.style.display = 'flex';
-    switchMfrTab('company');
+    renderMfrCompanyList();
   });
 
   btnMfrSaveDraft?.addEventListener('click', () => {
     showToast('제조사 프로필이 임시 저장되었습니다.');
     if (mfrRegisterView) mfrRegisterView.style.display = 'none';
     if (mfrEvalView) mfrEvalView.style.display = 'flex';
-    switchMfrTab('company');
+    renderMfrCompanyList();
   });
 
   document.getElementById('btnMfrBackToEvalList')?.addEventListener('click', () => {
@@ -1095,18 +1204,12 @@ function initMfrEval() {
     if (mfrDetailView) mfrDetailView.style.display = 'none';
     if (mfrEvalView) mfrEvalView.style.display = 'flex';
   });
+
+  initPartnerModal();
 }
 
 function bindBuyerCompaniesToMfrSelect() {
-  const selectPartner = document.getElementById('mfrRegPartner');
-  if (!selectPartner) return;
-  selectPartner.innerHTML = '<option value="" disabled selected>거래업체 선택</option>';
-  buyerMockData.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c.name;
-    opt.textContent = `${c.name} (${c.storeName})`;
-    selectPartner.appendChild(opt);
-  });
+  // Obsolete - Replaced by partnerSearchModal
 }
 
 function renderMfrEvalList() {
@@ -1144,49 +1247,257 @@ function renderMfrCompanyList() {
   if (!container) return;
   container.innerHTML = '';
 
-  mfrMockData.forEach(item => {
-    const card = document.createElement('div');
-    card.className = 'mfr-card';
-    card.innerHTML = `
-      <div class="card-header-row">
-        <h4 class="card-title" style="font-size:15px; font-weight:700;">${item.name}</h4>
-        <span class="badge ${item.type === 'OEM' ? 'status-pending' : 'status-completed'}">${item.type} 제조사</span>
-      </div>
-      <div class="card-info-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:4px;">
-        <div class="info-field"><span class="lbl">사업부 (Div.)</span><span class="val">${item.div}</span></div>
-        <div class="info-field"><span class="lbl">업태</span><span class="val">${item.biz}</span></div>
-        <div class="info-field"><span class="lbl">VHR 유형</span><span class="val">${item.vhr}</span></div>
-        <div class="info-field"><span class="lbl">최초등록일</span><span class="val">${item.regDate}</span></div>
-      </div>
-      <div class="mfr-card-actions">
-        <button class="btn-mfr-action-edit" data-id="${item.id}">정보 수정</button>
-        <button class="btn-mfr-action-eval" data-id="${item.id}">현장 평가</button>
+  const searchInput = document.getElementById('mfrSearchInput');
+  const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+  const filtered = mfrMockData.filter(item => {
+    if (!query) return true;
+    const nameMatch = item.name.toLowerCase().includes(query);
+    const cleanLicense = item.licenseNo.replace(/[^0-9]/g, '');
+    const cleanQuery = query.replace(/[^0-9]/g, '');
+    const licenseMatch = item.licenseNo.toLowerCase().includes(query) || (cleanQuery !== '' && cleanLicense.includes(cleanQuery));
+    return nameMatch || licenseMatch;
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="list-empty" style="text-align: center; padding: 40px 20px; color: #64748b;">
+        <p>검색 결과와 일치하는 제조사가 없습니다.</p>
       </div>
     `;
-    card.querySelector('.btn-mfr-action-edit').addEventListener('click', (e) => {
-      e.stopPropagation();
+    return;
+  }
+
+  filtered.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'eval-card';
+    card.style.cursor = 'pointer';
+    
+    // OEM vs GENERAL 디자인 다변화 (시각적 분간 극대화)
+    const badgeStyle = item.type === 'OEM'
+      ? 'background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;' // 소프트 스카이블루
+      : 'background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0;'; // 소프트 슬레이트
+
+    card.innerHTML = `
+      <div class="card-header-row">
+        <h4 class="card-title" style="font-size: 15px; font-weight: 800; color: #0f172a;">${item.name}</h4>
+        <div class="card-badges">
+          <span class="eval-badge" style="${badgeStyle} font-weight: 700; font-size: 11px; padding: 3px 8px; border-radius: 8px;">${item.type}</span>
+        </div>
+      </div>
+      <div class="card-info-grid" style="margin-top: 10px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 12px;">
+        <div class="info-field"><span class="lbl" style="font-size: 11.5px; color: #64748b; font-weight: 500;">사업부 (Div.)</span><span class="val" style="font-size: 13px; font-weight: 700; color: #334155;">${item.div}</span></div>
+        <div class="info-field"><span class="lbl" style="font-size: 11.5px; color: #64748b; font-weight: 500;">업태</span><span class="val" style="font-size: 13px; font-weight: 700; color: #334155;">${item.biz}</span></div>
+        <div class="info-field"><span class="lbl" style="font-size: 11.5px; color: #64748b; font-weight: 500;">VHR 유형</span><span class="val" style="font-size: 13px; font-weight: 700; color: #334155;">${item.vhr}</span></div>
+        <div class="info-field"><span class="lbl" style="font-size: 11.5px; color: #64748b; font-weight: 500;">등록일</span><span class="val" style="font-size: 13px; font-weight: 700; color: #334155;">${item.regDate}</span></div>
+      </div>
+    `;
+    
+    card.addEventListener('click', () => {
       openMfrProfileEdit(item);
-    });
-    card.querySelector('.btn-mfr-action-eval').addEventListener('click', (e) => {
-      e.stopPropagation();
-      openMfrDetail(item);
     });
     container.appendChild(card);
   });
 }
 
+function openMfrReadOnlyDetail(item) {
+  activeMfrItem = item;
+  const mfrEvalView = document.getElementById('mfr-eval-view');
+  const mfrReadOnlyView = document.getElementById('mfr-detail-readonly-view');
+  
+  if (mfrEvalView) mfrEvalView.style.display = 'none';
+  if (mfrReadOnlyView) mfrReadOnlyView.style.display = 'flex';
+
+  // 뒤로가기 버튼 연동
+  const btnBack = document.getElementById('btnMfrReadOnlyBackToEval');
+  if (btnBack) {
+    btnBack.onclick = () => {
+      mfrReadOnlyView.style.display = 'none';
+      mfrEvalView.style.display = 'flex';
+    };
+  }
+
+  // 1. 제조사 구분 정적 상태 고정 (OEM vs 일반)
+  const oemRadio = document.getElementById('mfrRoTypeOem');
+  const generalRadio = document.getElementById('mfrRoTypeGeneral');
+  const oemSubSection = document.getElementById('mfrRoOemSubSection');
+
+  if (item.type === 'OEM') {
+    if (oemRadio) oemRadio.checked = true;
+    if (generalRadio) generalRadio.checked = false;
+    if (oemSubSection) oemSubSection.style.display = 'flex';
+
+    // 거래업체 Chip들 나열 (지시사항 3)
+    const partnersContainer = document.getElementById('mfrRoSelectedPartnersContainer');
+    if (partnersContainer) {
+      partnersContainer.innerHTML = '';
+      const partnerName = item.partner || '주식회사 푸드링크';
+      const chip = document.createElement('span');
+      chip.className = 'partner-chip';
+      chip.style.cssText = 'background:#cbd5e1; color:#0f172a; font-size:11px; font-weight:700; padding:4px 8px; border-radius:12px; display:inline-flex; align-items:center;';
+      chip.textContent = partnerName;
+      partnersContainer.appendChild(chip);
+    }
+
+    // 재점검 대상 체크박스 상태 잠금
+    const recheckChk = document.getElementById('mfrRoRecheck');
+    if (recheckChk) {
+      recheckChk.checked = item.recheck === true;
+    }
+  } else {
+    if (oemRadio) oemRadio.checked = false;
+    if (generalRadio) generalRadio.checked = true;
+    if (oemSubSection) oemSubSection.style.display = 'none';
+  }
+
+  // 2. 입력값 바인딩 및 잠금 (Read-only 스타일)
+  document.getElementById('mfrRoRegDate').value = item.regDate;
+  document.getElementById('mfrRoInspector').value = item.inspector || '김바이어';
+  document.getElementById('mfrRoName').value = item.name;
+  document.getElementById('mfrRoDiv').value = item.div;
+  document.getElementById('mfrRoBiz').value = item.biz;
+  document.getElementById('mfrRoVhr').value = item.vhr;
+  document.getElementById('mfrRoOwner').value = item.owner || '홍길동';
+  document.getElementById('mfrRoLicense').value = item.licenseNo;
+  document.getElementById('mfrRoAddress').value = item.address || '서울시 중구 소공동 1번지';
+  document.getElementById('mfrRoCategory').value = item.category || '빵류, 과자류';
+  document.getElementById('mfrRoSales').value = item.sales || '연간 50억원';
+  document.getElementById('mfrRoClients').value = item.clients || '롯데백화점 본점, 롯데마트';
+  document.getElementById('mfrRoEmployees').value = item.employees || '45명';
+  document.getElementById('mfrRoCert').value = item.cert || 'HACCP 인증 완료 (2026)';
+  document.getElementById('mfrRoManager').value = item.manager || '김제조 공장장';
+  document.getElementById('mfrRoMemo').value = item.memo || '현장 시설 및 위생 복장 보완 조치 확인 완료.';
+
+  // 3. 파일 및 사진 첨부 플레이스홀더 분기 (지시사항 4)
+  const imageGrid = document.getElementById('mfrRoImagePreviewGrid');
+  if (imageGrid) {
+    imageGrid.innerHTML = '';
+    // 가상 이미지 데이터 매핑 (completed 상태일 경우 썸네일 노출, 없을 경우 플레이스홀더)
+    if (item.status === 'completed') {
+      imageGrid.innerHTML = `
+        <div class="preview-thumb" style="width:70px; height:70px; border-radius:8px; overflow:hidden; border:1px solid #cbd5e1; cursor:pointer;" onclick="showImagePopup('image_20afcc.png')">
+          <img src="image_20afcc.png" alt="현장 점검 사진" style="width:100%; height:100%; object-fit:cover;">
+        </div>
+      `;
+    } else {
+      imageGrid.innerHTML = `<span style="font-size:12px; color:#94a3b8; align-self:center;">등록된 현장 점검 이미지가 없습니다.</span>`;
+    }
+  }
+
+  const fileGrid = document.getElementById('mfrRoFilePreviewGrid');
+  if (fileGrid) {
+    fileGrid.innerHTML = '';
+    if (item.status === 'completed') {
+      fileGrid.innerHTML = `
+        <span class="partner-chip" style="background:#f1f5f9; border:1px solid #cbd5e1; color:#475569; font-size:11px; font-weight:700; padding:4px 8px; border-radius:12px; display:inline-flex; align-items:center; gap:4px; cursor:pointer;" onclick="showToast('2026_위생진단결과서.pdf 다운로드 시작')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:12px; height:12px;">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          </svg>
+          2026_위생진단결과서.pdf
+        </span>
+      `;
+    } else {
+      fileGrid.innerHTML = `<span style="font-size:12px; color:#94a3b8; align-self:center;">첨부된 개선조치 공식 문서가 없습니다.</span>`;
+    }
+  }
+
+  // 4. 최하단 액션 플로팅 바 이벤트 바인딩
+  const btnEditLink = document.getElementById('btnMfrRoEditLink');
+  if (btnEditLink) {
+    btnEditLink.onclick = () => {
+      mfrReadOnlyView.style.display = 'none';
+      openMfrProfileEdit(item);
+    };
+  }
+
+  const btnSend = document.getElementById('btnMfrRoSendReport');
+  if (btnSend) {
+    btnSend.onclick = () => {
+      showToast('제조사 위생 진단 결과 보고서가 바이어 계정 이메일로 전송되었습니다.');
+    };
+  }
+
+  const btnExcel = document.getElementById('btnMfrRoDownloadExcel');
+  if (btnExcel) {
+    btnExcel.onclick = () => {
+      showToast('제조사 평가 결과 엑셀 양식(.xlsx) 다운로드를 시작합니다.');
+    };
+  }
+}
+
 function openMfrProfileEdit(item) {
-  if (activeMfrItem) activeMfrItem = item;
+  activeMfrItem = item;
   const mfrEvalView = document.getElementById('mfr-eval-view');
   const mfrRegisterView = document.getElementById('mfr-register-view');
   if (mfrEvalView) mfrEvalView.style.display = 'none';
   if (mfrRegisterView) mfrRegisterView.style.display = 'flex';
   
-  document.getElementById('txt-mfr-register-title').textContent = '제조사 정보 수정';
+  document.getElementById('txt-mfr-register-title').textContent = '제조사 정보 상세/수정';
+  
+  // 기본 정보 매핑
   document.getElementById('mfrRegName').value = item.name;
   document.getElementById('mfrRegDiv').value = item.div;
   document.getElementById('mfrRegBiz').value = item.biz;
-  document.getElementById('mfrRegInspector').value = item.inspector;
+  document.getElementById('mfrRegInspector').value = item.inspector || '김바이어';
+  
+  // 상세 데이터 매핑 (요구사항 3)
+  document.getElementById('mfrRegOwner').value = item.owner || '홍길동';
+  document.getElementById('mfrRegLicense').value = item.licenseNo;
+  document.getElementById('mfrRegAddress').value = item.address || '서울시 중구 소공동 1번지';
+  document.getElementById('mfrRegCategory').value = item.category || '빵류, 과자류';
+  document.getElementById('mfrRegSales').value = item.sales || '50억원';
+  document.getElementById('mfrRegClients').value = item.clients || '롯데백화점, 롯데마트';
+  document.getElementById('mfrRegEmployees').value = item.employees || '45명';
+  document.getElementById('mfrRegCert').value = item.cert || 'HACCP 인증';
+  document.getElementById('mfrRegDate').value = item.regDate;
+  
+  // 피점검자 매핑
+  const mfrRegManager = document.getElementById('mfrRegManager');
+  if (mfrRegManager) {
+    mfrRegManager.value = item.manager || '김제조';
+  }
+  
+  // 기타 메모 매핑
+  const mfrRegMemo = document.getElementById('mfrRegMemo');
+  if (mfrRegMemo) {
+    mfrRegMemo.value = item.memo || '공장 위해 관리 상태 우수.';
+  }
+
+  // OEM 라디오 및 거래업체 연동
+  const oemRadio = document.querySelector('input[name="mfrRegType"][value="OEM"]');
+  const generalRadio = document.querySelector('input[name="mfrRegType"][value="GENERAL"]');
+  const oemSubSection = document.getElementById('mfrRegOemSubSection');
+  const partnersContainer = document.getElementById('mfrSelectedPartnersContainer');
+
+  if (item.type === 'OEM') {
+    if (oemRadio) oemRadio.checked = true;
+    if (oemSubSection) oemSubSection.style.display = 'flex';
+    
+    if (partnersContainer) {
+      partnersContainer.innerHTML = '';
+      const partnerName = item.partner || '주식회사 푸드링크';
+      const chip = document.createElement('span');
+      chip.className = 'partner-chip';
+      chip.style.cssText = 'background:#cbd5e1; color:#0f172a; font-size:11px; font-weight:700; padding:4px 8px; border-radius:12px; display:inline-flex; align-items:center;';
+      chip.textContent = partnerName;
+      partnersContainer.appendChild(chip);
+    }
+  } else {
+    if (generalRadio) generalRadio.checked = true;
+    if (oemSubSection) oemSubSection.style.display = 'none';
+  }
+
+  // VHR 유형 라디오 매핑
+  const vhrRadios = document.querySelectorAll('input[name="mfrRegVhr"]');
+  vhrRadios.forEach(radio => {
+    radio.checked = radio.value === item.vhr;
+  });
+
+  // 재점검 체크박스 매핑
+  const recheckChk = document.getElementById('mfrRegRecheck');
+  if (recheckChk) {
+    recheckChk.checked = item.recheck === true;
+  }
 }
 
 function openMfrDetail(item) {
@@ -1206,7 +1517,91 @@ function openMfrDetail(item) {
   document.getElementById('lblMfrDetailDiv').textContent = item.div;
   document.getElementById('lblMfrDetailBiz').textContent = item.biz;
   document.getElementById('lblMfrDetailVhr').textContent = item.vhr;
-  document.getElementById('lblMfrDetailInspector').textContent = item.inspector;
+  document.getElementById('lblMfrDetailInspector').textContent = item.inspector || '김바이어';
+  
+  const managerInput = document.getElementById('mfrDetailManagerInput');
+  if (managerInput) {
+    managerInput.value = item.manager || '김제조';
+  }
+
+  // 1. OEM 제조사 전환 탭 및 거래업체(납품처) 연동 (지시사항 1)
+  const rdoOem = document.getElementById('rdoMfrDetailOem');
+  const rdoGeneral = document.getElementById('rdoMfrDetailGeneral');
+  const oemSubSection = document.getElementById('mfrDetailOemSubSection');
+  const partnersContainer = document.getElementById('mfrDetailSelectedPartnersContainer');
+
+  const toggleOemSection = (type) => {
+    if (type === 'OEM') {
+      if (rdoOem) rdoOem.checked = true;
+      if (rdoGeneral) rdoGeneral.checked = false;
+      if (oemSubSection) oemSubSection.style.display = 'flex';
+      
+      if (partnersContainer) {
+        partnersContainer.innerHTML = '';
+        const partnerName = item.partner || '주식회사 푸드링크';
+        const chip = document.createElement('span');
+        chip.className = 'partner-chip';
+        chip.style.cssText = 'background:#cbd5e1; color:#0f172a; font-size:11px; font-weight:700; padding:4px 8px; border-radius:12px; display:inline-flex; align-items:center;';
+        chip.textContent = partnerName;
+        partnersContainer.appendChild(chip);
+      }
+    } else {
+      if (rdoOem) rdoOem.checked = false;
+      if (rdoGeneral) rdoGeneral.checked = true;
+      if (oemSubSection) oemSubSection.style.display = 'none';
+    }
+  };
+
+  toggleOemSection(item.type);
+
+  const handleRadioChange = (e) => {
+    const selectedType = e.target.value;
+    if (selectedType === 'OEM') {
+      if (oemSubSection) oemSubSection.style.display = 'flex';
+      if (partnersContainer) {
+        partnersContainer.innerHTML = '';
+        const chip = document.createElement('span');
+        chip.className = 'partner-chip';
+        chip.style.cssText = 'background:#cbd5e1; color:#0f172a; font-size:11px; font-weight:700; padding:4px 8px; border-radius:12px; display:inline-flex; align-items:center;';
+        chip.textContent = '롯데백화점 본점';
+        partnersContainer.appendChild(chip);
+      }
+    } else {
+      if (oemSubSection) oemSubSection.style.display = 'none';
+    }
+  };
+
+  if (rdoOem) rdoOem.onclick = handleRadioChange;
+  if (rdoGeneral) rdoGeneral.onclick = handleRadioChange;
+
+  const btnSearchPartner = document.getElementById('btnMfrDetailSearchPartner');
+  if (btnSearchPartner) {
+    btnSearchPartner.onclick = () => {
+      if (partnersContainer) {
+        const emptyTxt = document.getElementById('txtNoMfrDetailPartnerSelected');
+        if (emptyTxt) emptyTxt.remove();
+        
+        const chip = document.createElement('span');
+        chip.className = 'partner-chip';
+        chip.style.cssText = 'background:#cbd5e1; color:#0f172a; font-size:11px; font-weight:700; padding:4px 8px; border-radius:12px; display:inline-flex; align-items:center; margin-right:4px;';
+        chip.textContent = '롯데마트 잠실점';
+        partnersContainer.appendChild(chip);
+        showToast('거래업체 [롯데마트 잠실점]이 연동 칩으로 추가되었습니다.');
+      }
+    };
+  }
+
+  // 2. 재점검 대상 업체 여부 (지시사항 2)
+  const recheckChk = document.getElementById('mfrDetailRecheck');
+  if (recheckChk) {
+    recheckChk.checked = item.recheck === true;
+  }
+
+  // 3. 총평 입력 바인딩 (지시사항 3)
+  const commentInput = document.getElementById('mfrDetailCommentInput');
+  if (commentInput) {
+    commentInput.value = item.comment || '';
+  }
 
   renderMfrChecklistQuestions();
 }
@@ -1221,36 +1616,45 @@ function renderMfrChecklistQuestions() {
     { id: '2', category: '보관관리', item: '보관 창고 온도 모니터링 적정성' }
   ];
 
-  dummyQuestions.forEach(q => {
+  dummyQuestions.forEach((q, idx) => {
     const card = document.createElement('div');
-    card.className = 'question-card';
+    card.className = 'inspect-card';
     card.innerHTML = `
-      <div class="question-header">
-        <div class="q-title-row">
-          <span class="q-num">${q.id}</span>
-          <span class="q-category">[${q.category}]</span>
+      <div class="inspect-card-header" style="position: relative;">
+        <span class="item-num">점검 항목 ${idx + 1}</span>
+        <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+          <h5 class="item-title" style="margin: 0;">${q.item}</h5>
+          <button class="btn-help-guide" style="background: #e2e8f0; border: none; width: 16px; height: 16px; border-radius: 50%; cursor: pointer; color: #475569; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; font-family: sans-serif; transition: all 0.2s;" title="도움말 확인">?</button>
         </div>
-        <p class="q-item-text" style="font-size: 13px; font-weight: 600; color: #0f172a; margin: 4px 0 0 0;">${q.item}</p>
+        <p class="item-desc" style="margin-top: 4px;">[${q.category}] 현장 위해 요소 및 위생 지침 기준 적정성</p>
       </div>
-      <div class="question-body">
-        <div class="scoring-toggle-buttons">
-          <button class="btn-score btn-score-fit">적합</button>
-          <button class="btn-score btn-score-unfit">부적합</button>
-        </div>
-        <button class="btn-item-detail-page" style="margin-top:10px; width:100%; height:36px; border:1px dashed #cbd5e1; background:#fff; color:#475569; font-size:12px; cursor:pointer;">
-          상세 내용 및 사진 추가
+      <div class="binary-control" data-qid="${q.id}">
+        <button class="binary-btn btn-fit" data-result="fit">적합</button>
+        <button class="binary-btn btn-unfit" data-result="unfit">부적합</button>
+      </div>
+      
+      <div class="inspect-card-extra" style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #e2e8f0; display: flex; flex-direction: column; gap: 8px;">
+        <button class="btn-item-detail-page" style="height: 36px; width: 100%; border: 1px dashed #cbd5e1; background: #ffffff; color: #475569; font-size: 12px; font-weight: 700; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s;">
+          상세 내용 및 증빙 사진 추가
         </button>
       </div>
     `;
 
-    card.querySelectorAll('.btn-score').forEach(btn => {
+    card.querySelector('.btn-help-guide').addEventListener('click', (e) => {
+      e.stopPropagation();
+      showToast(`[점검 기준] ${q.item}: ${q.category} 지침에 의거하여 청결/온도 기준을 준수해야 합니다.`);
+    });
+
+    card.querySelectorAll('.binary-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        card.querySelectorAll('.btn-score').forEach(b => b.classList.remove('active'));
+        card.querySelectorAll('.binary-btn').forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
         const badge = document.getElementById('mfrVerdictBadge');
         if (badge) {
-          badge.textContent = '최종 적합';
-          badge.className = 'badge verdict-badge badge-fit';
+          // 가상 동적 최종 판정 연계
+          const isFit = e.target.classList.contains('btn-fit');
+          badge.textContent = isFit ? '최종 적합' : '최종 부적합';
+          badge.className = isFit ? 'val-verdict verdict-fit' : 'val-verdict verdict-unfit';
         }
       });
     });
@@ -1321,7 +1725,8 @@ function openMasterSearch(type, prevId, title) {
 
 function initMasterSearch() {
   const btnBuyerSearchMaster = document.getElementById('btnBuyerSearchMaster');
-  const btnMfrSearchMaster = document.getElementById('btnMfrSearchMaster');
+  const btnMfrCheckName = document.getElementById('btnMfrCheckName');
+  const btnMfrCheckLicense = document.getElementById('btnMfrCheckLicense');
   const masterSearchView = document.getElementById('master-search-view');
   const btnBackFromMasterSearch = document.getElementById('btnBackFromMasterSearch');
   const masterSearchPageTitle = document.getElementById('master-search-page-title');
@@ -1348,10 +1753,29 @@ function initMasterSearch() {
     if (masterSearchView) masterSearchView.style.display = 'flex';
     if (masterSearchInput) masterSearchInput.value = '';
     renderMasterSearchCards();
+    
+    // 진입 시 기본 탭 '업체 검색' 강제 트리거
+    tabSearchCompany?.click();
   };
 
-  btnBuyerSearchMaster?.addEventListener('click', () => openSearch('buyer', 'buyer-register-view', '[바이어 평가] 신규 업체 등록'));
-  btnMfrSearchMaster?.addEventListener('click', () => openSearch('mfr', 'mfr-register-view', '[제조사 현장평가] 신규 업체 등록'));
+  btnBuyerSearchMaster?.addEventListener('click', () => openSearch('buyer', 'buyer-register-view', '신규 업체 등록'));
+  btnMfrCheckName?.addEventListener('click', () => {
+    const nameVal = document.getElementById('mfrRegName')?.value.trim();
+    if (!nameVal) {
+      showToast('제조사명을 입력해 주세요.');
+      return;
+    }
+    showToast(`'${nameVal}'은(는) 등록 가능한 제조사명입니다.`);
+  });
+
+  btnMfrCheckLicense?.addEventListener('click', () => {
+    const licenseVal = document.getElementById('mfrRegLicense')?.value.trim();
+    if (!licenseVal) {
+      showToast('사업자등록번호를 입력해 주세요.');
+      return;
+    }
+    showToast(`'${licenseVal}'은(는) 등록 가능한 사업자번호입니다.`);
+  });
 
   btnBackFromMasterSearch?.addEventListener('click', () => {
     if (masterSearchView) masterSearchView.style.display = 'none';
@@ -1359,11 +1783,14 @@ function initMasterSearch() {
     if (prev) prev.style.display = 'flex';
   });
 
+  const masterRegisterActionsBar = document.getElementById('masterRegisterActionsBar');
+
   tabSearchCompany?.addEventListener('click', () => {
     tabSearchCompany.classList.add('active');
     tabRegisterCompany?.classList.remove('active');
     if (searchTabContent) searchTabContent.style.display = 'flex';
     if (registerTabContent) registerTabContent.style.display = 'none';
+    if (masterRegisterActionsBar) masterRegisterActionsBar.style.display = 'none';
   });
 
   tabRegisterCompany?.addEventListener('click', () => {
@@ -1371,6 +1798,7 @@ function initMasterSearch() {
     tabSearchCompany?.classList.remove('active');
     if (searchTabContent) searchTabContent.style.display = 'none';
     if (registerTabContent) registerTabContent.style.display = 'flex';
+    if (masterRegisterActionsBar) masterRegisterActionsBar.style.display = 'flex';
   });
 
   masterSearchInput?.addEventListener('input', () => renderMasterSearchCards());
@@ -1508,7 +1936,7 @@ menuButtons.forEach(btn => {
 
 // 바이어 평가 헤더 플러스 버튼 클릭 -> 마스터 검색 뷰 열기
 document.getElementById('btnHeaderAdd')?.addEventListener('click', () => {
-  openMasterSearch('buyer', 'buyer-eval-view', '[바이어 평가] 신규 업체 등록');
+  openMasterSearch('buyer', 'buyer-eval-view', '신규 업체 등록');
   
   const regCompanyName = document.getElementById('regCompanyName');
   if (regCompanyName) regCompanyName.value = '';
@@ -1523,6 +1951,194 @@ document.getElementById('btnBackToEvalFromReg')?.addEventListener('click', () =>
   const evalView = document.getElementById('buyer-eval-view');
   if (evalView) evalView.style.display = 'flex';
 });
+
+// 거래업체 더미데이터 리스트 (12개)
+const partnerDummyList = [
+  { id: 'P01', name: '(주)롯데웰푸드', category: '과자/빙과/육가공' },
+  { id: 'P02', name: '(주)농심', category: '라면/스낵/그로서리' },
+  { id: 'P03', name: '(주)오뚜기', category: '라면/조미/즉석식품' },
+  { id: 'P04', name: '(주)CJ제일제당', category: '육가공/가공식품' },
+  { id: 'P05', name: '(주)풀무원', category: '두부/신선식품/가공' },
+  { id: 'P06', name: '(주)동원F&B', category: '참치/수산가공/유제품' },
+  { id: 'P07', name: '(주)대상', category: '장류/조미료/가공식품' },
+  { id: 'P08', name: '(주)SPC삼립', category: '베이커리/디저트' },
+  { id: 'P09', name: '(주)매일유업', category: '유제품/음료/치즈' },
+  { id: 'P10', name: '(주)남양유업', category: '우유/분유/커피음료' },
+  { id: 'P11', name: '(주)하림', category: '닭고기/오리/육가공' },
+  { id: 'P12', name: '(주)빙그레', category: '아이스크림/유제품' }
+];
+
+let tempSelectedPartners = new Set();
+
+function initPartnerModal() {
+  const btnMfrSearchPartner = document.getElementById('btnMfrSearchPartner');
+  const mfrPartnerSearchModal = document.getElementById('mfrPartnerSearchModal');
+  const btnMfrClosePartnerModal = document.getElementById('btnMfrClosePartnerModal');
+  const btnMfrCancelPartnerSelect = document.getElementById('btnMfrCancelPartnerSelect');
+  const btnMfrApplyPartnerSelect = document.getElementById('btnMfrApplyPartnerSelect');
+  const mfrPartnerSearchInput = document.getElementById('mfrPartnerSearchInput');
+  const chkPartnerSelectAll = document.getElementById('chk-partner-select-all');
+
+  function updateApplyButtonText() {
+    if (btnMfrApplyPartnerSelect) {
+      btnMfrApplyPartnerSelect.textContent = `선택 적용 (${tempSelectedPartners.size}개)`;
+    }
+  }
+
+  // 모달 열기
+  btnMfrSearchPartner?.addEventListener('click', () => {
+    tempSelectedPartners.clear();
+    // 기존에 컨테이너에 선택된 칩이 있으면 그 값들을 불러오기
+    const chips = document.querySelectorAll('#mfrSelectedPartnersContainer .partner-chip-name');
+    chips.forEach(c => tempSelectedPartners.add(c.textContent.trim()));
+
+    if (mfrPartnerSearchInput) mfrPartnerSearchInput.value = '';
+    if (chkPartnerSelectAll) chkPartnerSelectAll.checked = (tempSelectedPartners.size === partnerDummyList.length);
+    
+    renderPartnerModalList('');
+    updateApplyButtonText();
+    
+    if (mfrPartnerSearchModal) mfrPartnerSearchModal.style.display = 'flex';
+  });
+
+  // 모달 닫기
+  btnMfrClosePartnerModal?.addEventListener('click', () => {
+    if (mfrPartnerSearchModal) mfrPartnerSearchModal.style.display = 'none';
+  });
+  btnMfrCancelPartnerSelect?.addEventListener('click', () => {
+    if (mfrPartnerSearchModal) mfrPartnerSearchModal.style.display = 'none';
+  });
+
+  // 실시간 검색
+  mfrPartnerSearchInput?.addEventListener('input', (e) => {
+    renderPartnerModalList(e.target.value.trim());
+  });
+
+  // 전체 선택 / 해제
+  chkPartnerSelectAll?.addEventListener('change', (e) => {
+    const checked = e.target.checked;
+    const checkboxes = document.querySelectorAll('#mfrPartnerSearchList input[type="checkbox"]');
+    checkboxes.forEach(chk => {
+      const val = chk.value;
+      chk.checked = checked;
+      
+      // 디자인 클래스 및 데이터 갱신
+      const labelCard = chk.closest('label');
+      if (checked) {
+        tempSelectedPartners.add(val);
+        if (labelCard) {
+          labelCard.style.borderColor = '#0f172a';
+          labelCard.style.background = '#f1f5f9';
+        }
+      } else {
+        tempSelectedPartners.delete(val);
+        if (labelCard) {
+          labelCard.style.borderColor = '#e2e8f0';
+          labelCard.style.background = '#f8fafc';
+        }
+      }
+    });
+    updateApplyButtonText();
+  });
+
+  // 선택 완료 확정
+  btnMfrApplyPartnerSelect?.addEventListener('click', () => {
+    const container = document.getElementById('mfrSelectedPartnersContainer');
+    if (!container) return;
+
+    container.innerHTML = '';
+    if (tempSelectedPartners.size === 0) {
+      container.innerHTML = '<span style="font-size: 12px; color: #94a3b8; align-self: center; margin-left: 4px;" id="txtNoPartnerSelected">선택된 거래업체가 없습니다.</span>';
+      const mfrRegPartner = document.getElementById('mfrRegPartner');
+      if (mfrRegPartner) mfrRegPartner.value = '';
+    } else {
+      const namesArray = Array.from(tempSelectedPartners);
+      const mfrRegPartner = document.getElementById('mfrRegPartner');
+      if (mfrRegPartner) mfrRegPartner.value = namesArray.join(',');
+
+      namesArray.forEach(name => {
+        const chip = document.createElement('div');
+        chip.className = 'partner-chip';
+        chip.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; padding: 6px 10px; background: #e2e8f0; color: #475569; border-radius: 8px; font-size: 11px; font-weight: 700; margin: 2px;';
+        chip.innerHTML = `
+          <span class="partner-chip-name">${name}</span>
+          <span class="btn-remove-partner" style="cursor: pointer; font-size: 12px; line-height: 1; font-weight: 800; color: #94a3b8; transition: color 0.2s;" onmouseover="this.style.color='#f43f5e'" onmouseout="this.style.color='#94a3b8'">&times;</span>
+        `;
+        chip.querySelector('.btn-remove-partner').addEventListener('click', () => {
+          tempSelectedPartners.delete(name);
+          chip.remove();
+          if (container.querySelectorAll('.partner-chip').length === 0) {
+            container.innerHTML = '<span style="font-size: 12px; color: #94a3b8; align-self: center; margin-left: 4px;" id="txtNoPartnerSelected">선택된 거래업체가 없습니다.</span>';
+            if (mfrRegPartner) mfrRegPartner.value = '';
+          } else {
+            if (mfrRegPartner) mfrRegPartner.value = Array.from(tempSelectedPartners).join(',');
+          }
+        });
+        container.appendChild(chip);
+      });
+    }
+
+    if (mfrPartnerSearchModal) mfrPartnerSearchModal.style.display = 'none';
+    showToast(`${tempSelectedPartners.size}개의 거래업체가 지정되었습니다.`);
+  });
+}
+
+function renderPartnerModalList(keyword = '') {
+  const listDiv = document.getElementById('mfrPartnerSearchList');
+  if (!listDiv) return;
+
+  listDiv.innerHTML = '';
+  const filtered = partnerDummyList.filter(p => p.name.includes(keyword) || p.category.includes(keyword));
+
+  if (filtered.length === 0) {
+    listDiv.innerHTML = '<p style="text-align: center; color: #94a3b8; font-size: 12px; margin: 20px 0;">검색 결과가 없습니다.</p>';
+    return;
+  }
+
+  filtered.forEach(p => {
+    const isChecked = tempSelectedPartners.has(p.name);
+    const card = document.createElement('label');
+    card.style.cssText = 'display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; cursor: pointer; transition: all 0.2s;';
+    card.innerHTML = `
+      <input type="checkbox" value="${p.name}" ${isChecked ? 'checked' : ''} style="width: 18px; height: 18px; accent-color: #0f172a; cursor: pointer;">
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+        <span style="font-size: 13px; font-weight: 700; color: #0f172a;">${p.name}</span>
+        <span style="font-size: 10px; color: #64748b;">${p.category}</span>
+      </div>
+    `;
+
+    const chk = card.querySelector('input[type="checkbox"]');
+    chk.addEventListener('change', (e) => {
+      const btnMfrApplyPartnerSelect = document.getElementById('btnMfrApplyPartnerSelect');
+      if (e.target.checked) {
+        tempSelectedPartners.add(p.name);
+        card.style.borderColor = '#0f172a';
+        card.style.background = '#f1f5f9';
+      } else {
+        tempSelectedPartners.delete(p.name);
+        card.style.borderColor = '#e2e8f0';
+        card.style.background = '#f8fafc';
+      }
+      
+      // 전체 선택 상태 업데이트
+      const chkPartnerSelectAll = document.getElementById('chk-partner-select-all');
+      if (chkPartnerSelectAll) {
+        chkPartnerSelectAll.checked = (tempSelectedPartners.size === partnerDummyList.length);
+      }
+      
+      if (btnMfrApplyPartnerSelect) {
+        btnMfrApplyPartnerSelect.textContent = `선택 적용 (${tempSelectedPartners.size}개)`;
+      }
+    });
+
+    if (isChecked) {
+      card.style.borderColor = '#0f172a';
+      card.style.background = '#f1f5f9';
+    }
+
+    listDiv.appendChild(card);
+  });
+}
 
 // 초기화 시작
 document.addEventListener('DOMContentLoaded', init);
