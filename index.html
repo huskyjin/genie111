@@ -574,9 +574,9 @@
                 <polyline points="12 19 5 12 12 5"></polyline>
               </svg>
             </button>
-            <h2 class="header-title">신규 업체 등록</h2>
-            <!-- 헤더 우측 균형용 빈 노드 -->
-            <div style="width: 32px;"></div>
+            <h2 class="header-title" id="txt-buyer-register-title">신규 업체 등록</h2>
+            <button class="btn-text-action" id="btnBuyerRegDetailEdit" style="font-size: 13.5px; font-weight: 700; color: #0f172a; background: none; border: none; cursor: pointer; padding: 6px 12px; border-radius: 6px; transition: all 0.2s; white-space: nowrap; display: none;">수정</button>
+            <div id="buyerRegHeaderSpacer" style="width: 32px; height: 32px;"></div>
           </header>
 
           <!-- 신규 업체 등록 콘텐츠 컨테이너 (스크롤 가능) -->
@@ -728,12 +728,17 @@
               </div>
 
               <!-- 17. Express 여부 -->
-              <div class="form-group">
-                <label class="chk-item chk-express-item">
+              <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
+                <label class="chk-item chk-express-item" style="margin: 0;">
                   <input type="checkbox" id="regExpress" value="Express">
                   <span class="chk-box"></span>
-                  <strong>Express 긴급 요청건으로 등록 <span id="expressCountBadge" style="font-size: 11.5px; font-weight: 700; color: #ef4444; margin-left: 6px; background: #fee2e2; padding: 2px 8px; border-radius: 6px;">(잔여 5회 / 월 5회)</span></strong>
+                  <strong>Express 긴급 요청건으로 등록</strong>
                 </label>
+                <div id="expressCountGuideline" style="font-size: 11.5px; font-weight: 500; color: #475569; padding-left: 28px; display: flex; align-items: center; gap: 4px;">
+                  <span style="display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: #94a3b8;"></span>
+                  <span>금월 긴급 요청 잔여 횟수:</span>
+                  <strong id="expressCountBadge" style="color: #ef4444; background: #fee2e2; padding: 2px 8px; border-radius: 6px; font-weight: 700; margin-left: 2px;">5회 / 5회</strong>
+                </div>
               </div>
 
               <div class="form-actions" style="margin-top: 15px;">
@@ -978,7 +983,8 @@
               </svg>
             </button>
             <h2 class="header-title" id="txt-mfr-register-title">제조사 업체 등록</h2>
-            <div style="width: 32px; height: 32px;"></div>
+            <button class="btn-text-action" id="btnMfrDetailEdit" style="font-size: 13.5px; font-weight: 700; color: #0f172a; background: none; border: none; cursor: pointer; padding: 6px 12px; border-radius: 6px; transition: all 0.2s; white-space: nowrap; display: none;">수정</button>
+            <div id="mfrHeaderSpacer" style="width: 32px; height: 32px;"></div>
           </header>
 
           <!-- 상단 탭 전환 바 (고정) -->
@@ -1224,7 +1230,17 @@
                 
                 <!-- [평가 등록: 파일 업로드] -->
                 <div class="upload-sub-section" style="display: flex; flex-direction: column; gap: 10px;">
-                  <h4 style="font-size: 12.5px; font-weight: 700; color: #475569; margin: 0;">[평가 등록: 파일 업로드]</h4>
+                  <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <h4 style="font-size: 12.5px; font-weight: 700; color: #475569; margin: 0;">[평가 등록: 파일 업로드]</h4>
+                    <button type="button" id="btnMfrEvalBatchDownload" style="font-size: 11.5px; font-weight: 700; color: #2563eb; background: #dbeafe; border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; display: none; align-items: center; gap: 4px; transition: all 0.2s;">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 11px; height: 11px;">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                      </svg>
+                      일괄 다운로드
+                    </button>
+                  </div>
                   <div class="image-upload-wrapper">
                     <!-- Drag & Drop 표준 UX 가이드를 포함한 점검 사진 업로드 존 -->
                     <label for="mfrRegImageInput" class="upload-trigger-zone" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 24px 20px; background: #ffffff; cursor: pointer; transition: all 0.2s;" ondragover="event.preventDefault(); this.style.borderColor='#0f172a';" ondragleave="this.style.borderColor='#cbd5e1';">
@@ -1244,7 +1260,17 @@
 
                 <!-- [개선 조치: 파일 업로드] -->
                 <div class="upload-sub-section" style="display: flex; flex-direction: column; gap: 10px; border-top: 1px dashed #cbd5e1; padding-top: 16px;">
-                  <h4 style="font-size: 12.5px; font-weight: 700; color: #475569; margin: 0;">[개선 조치: 파일 업로드]</h4>
+                  <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <h4 style="font-size: 12.5px; font-weight: 700; color: #475569; margin: 0;">[개선 조치: 파일 업로드]</h4>
+                    <button type="button" id="btnMfrActionBatchDownload" style="font-size: 11.5px; font-weight: 700; color: #2563eb; background: #dbeafe; border: none; padding: 4px 10px; border-radius: 6px; cursor: pointer; display: none; align-items: center; gap: 4px; transition: all 0.2s;">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 11px; height: 11px;">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                      </svg>
+                      일괄 다운로드
+                    </button>
+                  </div>
                   <div class="file-upload-wrapper">
                     <!-- Drag & Drop 가이드를 적용한 개선조치 파일 업로드 존 -->
                     <label for="mfrRegFileInput" class="upload-trigger-zone" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 24px 20px; background: #ffffff; cursor: pointer; transition: all 0.2s;" ondragover="event.preventDefault(); this.style.borderColor='#0f172a';" ondragleave="this.style.borderColor='#cbd5e1';">
@@ -1325,39 +1351,29 @@
             <div id="registerTabContent" style="display: none; background: #ffffff; border-radius: 16px; padding: 20px; border: 1px solid #e2e8f0; box-shadow: var(--shadow-sm); flex-direction: column; gap: 16px; margin-bottom: 20px; width: 100%;">
               <h3 style="font-size: 14px; font-weight: 700; color: #0f172a; margin: 0 0 2px 0;">신규 업체 등록</h3>
               
-              <!-- 1. 신규 업체명 -->
+              <!-- 1. 등록 일자 -->
+              <div class="form-group">
+                <label for="newMasterDate" class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">등록 일자 <span class="required">*</span></label>
+                <input type="date" id="newMasterDate" class="input-form" style="height: 42px;">
+              </div>
+
+              <!-- 2. 신규 업체명 -->
               <div class="form-group" style="margin: 0; width: 100%;">
                 <label class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">신규 업체명 <span class="required">*</span></label>
-                <input type="text" id="newMasterName" class="input-form" placeholder="정확한 업체명을 입력해 주세요." style="height: 42px; margin-bottom: 8px;">
-                <button type="button" id="btnCheckMasterName" style="width: 100%; height: 38px; background: #e2e8f0; color: #475569; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; outline: none;">업체명 중복확인</button>
+                <div style="display: flex; gap: 8px; width: 100%; margin-bottom: 6px;">
+                  <input type="text" id="newMasterName" class="input-form" placeholder="정확한 업체명을 입력해 주세요." style="height: 42px; flex: 1;">
+                  <button type="button" id="btnCheckMasterName" style="height: 42px; padding: 0 16px; background: #0f172a; color: #ffffff; font-weight: 700; border: none; border-radius: 8px; font-size: 12px; cursor: pointer; white-space: nowrap; outline: none;">중복 확인</button>
+                </div>
+                <span id="nameCheckFeedback" style="font-size: 11px; font-weight: 600; color: #94a3b8; display: block; margin-top: 2px;">* 업체 중복 검사를 진행해 주세요.</span>
               </div>
 
-              <!-- 2. 신규 사업자등록번호 -->
-              <div class="form-group" style="margin: 0; width: 100%;">
-                <label class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">사업자등록번호 <span class="required">*</span></label>
-                <input type="text" id="newMasterLicense" class="input-form" placeholder="10자리 숫자만 입력 (예: 120-81-22456)" style="height: 42px; margin-bottom: 8px;">
-                <button type="button" id="btnCheckMasterLicense" style="width: 100%; height: 38px; background: #e2e8f0; color: #475569; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; outline: none;">사업자번호 중복확인</button>
+              <!-- 3. 점포명 -->
+              <div class="form-group">
+                <label for="newMasterStoreName" class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">점포명 <span class="required">*</span></label>
+                <input type="text" id="newMasterStoreName" class="input-form" placeholder="예: 본점 (소공점)" style="height: 42px;">
               </div>
 
-              <!-- 3. 대표자명 -->
-              <div class="form-group" style="margin: 0; width: 100%;">
-                <label class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">대표자명</label>
-                <input type="text" id="newMasterOwner" class="input-form" placeholder="대표자 성명" style="height: 42px;">
-              </div>
-
-              <!-- 4. 소재지 주소 -->
-              <div class="form-group" style="margin: 0; width: 100%;">
-                <label class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">소재지 주소</label>
-                <input type="text" id="newMasterAddress" class="input-form" placeholder="업체 주소를 입력해 주세요." style="height: 42px;">
-              </div>
-
-              <!-- 5. 대표 품목 -->
-              <div class="form-group" style="margin: 0; width: 100%;">
-                <label class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">대표 품목</label>
-                <input type="text" id="newMasterCategory" class="input-form" placeholder="예: 빵류, 즉석식품, 신선농산물 등" style="height: 42px;">
-              </div>
-
-              <!-- 6. 점검 사업부 선택 -->
+              <!-- 4. 점검 사업부 선택 -->
               <div class="form-group" style="margin: 0; width: 100%;">
                 <label class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">점검 사업부 <span class="required">*</span></label>
                 <div class="select-wrapper" style="width: 100%;">
@@ -1375,10 +1391,10 @@
                 </div>
               </div>
 
-              <!-- 7. 업태 -->
+              <!-- 5. 업태 -->
               <div class="form-group" style="margin: 0; width: 100%;">
                 <label class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px; display: inline-flex; align-items: center; gap: 4px;">
-                  업태 
+                  업태 <span class="required">*</span>
                   <button type="button" class="btn-info-badge" style="background: #e2e8f0; border: none; width: 14px; height: 14px; border-radius: 50%; cursor: pointer; color: #475569; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; font-family: sans-serif; padding: 0; line-height: 1;" title="업태 설명">?</button>
                 </label>
                 <div class="select-wrapper" style="width: 100%;">
@@ -1395,7 +1411,7 @@
                 </div>
               </div>
 
-              <!-- 8. VHR 유형 -->
+              <!-- 6. VHR 유형 -->
               <div class="form-group" style="margin: 0; width: 100%;">
                 <label class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 8px; display: inline-flex; align-items: center; gap: 4px;">
                   VHR 유형 <span class="required">*</span>
@@ -1425,6 +1441,85 @@
                   </label>
                 </div>
               </div>
+
+              <!-- 7. 소재지 주소 -->
+              <div class="form-group" style="margin: 0; width: 100%;">
+                <label for="newMasterAddress" class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">소재지 주소</label>
+                <input type="text" id="newMasterAddress" class="input-form" placeholder="업체 주소를 입력해 주세요." style="height: 42px;">
+              </div>
+
+              <!-- 8. 영업인허가 / 신규 사업자등록번호 -->
+              <div class="form-group" style="margin: 0; width: 100%;">
+                <label class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">사업자등록번호 (영업인허가) <span class="required">*</span></label>
+                <div style="display: flex; gap: 8px; width: 100%; margin-bottom: 6px;">
+                  <input type="text" id="newMasterLicense" class="input-form" placeholder="10자리 숫자만 입력 (예: 120-81-22456)" style="height: 42px; flex: 1;">
+                  <button type="button" id="btnCheckMasterLicense" style="height: 42px; padding: 0 16px; background: #0f172a; color: #ffffff; font-weight: 700; border: none; border-radius: 8px; font-size: 12px; cursor: pointer; white-space: nowrap; outline: none;">중복 확인</button>
+                </div>
+                <span id="licenseCheckFeedback" style="font-size: 11px; font-weight: 600; color: #94a3b8; display: block; margin-top: 2px;">* 사업자번호 중복 검사를 진행해 주세요.</span>
+              </div>
+
+              <!-- 9. 대표자명 -->
+              <div class="form-group" style="margin: 0; width: 100%;">
+                <label for="newMasterOwner" class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">대표자명</label>
+                <input type="text" id="newMasterOwner" class="input-form" placeholder="대표자 성명" style="height: 42px;">
+              </div>
+
+              <!-- 10. 대표 품목 (식품유형) -->
+              <div class="form-group" style="margin: 0; width: 100%;">
+                <label for="newMasterCategory" class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">대표품목 (식품유형)</label>
+                <input type="text" id="newMasterCategory" class="input-form" placeholder="예: 빵류, 과자류" style="height: 42px;">
+              </div>
+
+              <!-- 11. 매출액 -->
+              <div class="form-group">
+                <label for="newMasterSales" class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">매출액</label>
+                <input type="text" id="newMasterSales" class="input-form" placeholder="연간 매출액 등" style="height: 42px;">
+              </div>
+
+              <!-- 12. 주요거래처 -->
+              <div class="form-group">
+                <label for="newMasterPartners" class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">주요거래처</label>
+                <input type="text" id="newMasterPartners" class="input-form" placeholder="주요 납품처/협력사" style="height: 42px;">
+              </div>
+
+              <!-- 13. 근무인원 -->
+              <div class="form-group">
+                <label for="newMasterEmployeeCount" class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">근무인원</label>
+                <input type="number" id="newMasterEmployeeCount" class="input-form" placeholder="명" style="height: 42px;">
+              </div>
+
+              <!-- 14. 인증여부 -->
+              <div class="form-group">
+                <label for="newMasterCert" class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">인증여부</label>
+                <input type="text" id="newMasterCert" class="input-form" placeholder="예: HACCP인증" style="height: 42px;">
+              </div>
+
+              <!-- 15. 담당 Buyer -->
+              <div class="form-group">
+                <label for="newMasterBuyerName" class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">담당 Buyer</label>
+                <input type="text" id="newMasterBuyerName" class="input-form" placeholder="담당 바이어 이름" style="height: 42px;">
+              </div>
+
+              <!-- 16. 기타 -->
+              <div class="form-group">
+                <label for="newMasterNotes" class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">기타</label>
+                <input type="text" id="newMasterNotes" class="input-form" placeholder="기타 특이사항" style="height: 42px;">
+              </div>
+
+              <!-- 17. Express 여부 -->
+              <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
+                <label class="chk-item chk-express-item" style="margin: 0;">
+                  <input type="checkbox" id="newMasterExpress" value="Express">
+                  <span class="chk-box"></span>
+                  <strong>Express 긴급 요청건으로 등록</strong>
+                </label>
+                <div id="newMasterExpressCountGuideline" style="font-size: 11.5px; font-weight: 500; color: #475569; padding-left: 28px; display: flex; align-items: center; gap: 4px;">
+                  <span style="display: inline-block; width: 4px; height: 4px; border-radius: 50%; background: #94a3b8;"></span>
+                  <span>금월 긴급 요청 잔여 횟수:</span>
+                  <strong id="newMasterExpressCountBadge" style="color: #ef4444; background: #fee2e2; padding: 2px 8px; border-radius: 6px; font-weight: 700; margin-left: 2px;">5회 / 5회</strong>
+                </div>
+              </div>
+
             </div>
           </div>
 

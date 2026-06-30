@@ -125,6 +125,7 @@ let currentSearchType = 'buyer';
 let isNameChecked = false;
 let isLicenseChecked = false;
 let isBuyerDetailReadOnly = false;
+let isMfrDetailReadOnly = false;
 let buyerActiveTab = 'all';
 let tempEvalAnswers = {
   'C01': { result: '', memo: '', photos: [], files: [] },
@@ -914,48 +915,60 @@ function renderBuyerCompanyList() {
 }
 
 function updateExpressCountUI() {
-  const badge = document.getElementById('expressCountBadge');
-  const chk = document.getElementById('regExpress');
-  if (!badge) return;
-
-  // 전체 데이터 중 Express 요청건으로 등록된 횟수 카운팅
-  const usedCount = buyerMockData.filter(d => d.express === true).length;
   const limit = 5;
+  const usedCount = buyerMockData.filter(d => d.express === true).length;
   const remaining = Math.max(0, limit - usedCount);
 
-  badge.textContent = `(잔여 ${remaining}회 / 월 ${limit}회)`;
-
-  if (remaining <= 0) {
-    badge.style.background = '#f1f5f9';
-    badge.style.color = '#94a3b8';
-    badge.style.border = '1px solid #cbd5e1';
-    if (chk) {
-      chk.disabled = true;
-      chk.checked = false;
+  // 1. regExpress 관련 UI 처리 (업체 검색 후 등록 화면)
+  const badge = document.getElementById('expressCountBadge');
+  const chk = document.getElementById('regExpress');
+  if (badge) {
+    badge.textContent = `${remaining}회 / ${limit}회`;
+    if (remaining <= 0) {
+      badge.style.background = '#f1f5f9';
+      badge.style.color = '#94a3b8';
+      badge.style.border = '1px solid #cbd5e1';
+      if (chk) {
+        chk.disabled = true;
+        chk.checked = false;
+      }
+      badge.textContent = `사용 불가`;
+    } else {
+      badge.style.background = '#fee2e2';
+      badge.style.color = '#ef4444';
+      badge.style.border = 'none';
+      if (chk) {
+        chk.disabled = false;
+      }
     }
-    badge.textContent = `(사용 불가 / 월 ${limit}회 초과)`;
-  } else {
-    badge.style.background = '#fee2e2';
-    badge.style.color = '#ef4444';
-    badge.style.border = 'none';
-    if (chk) {
-      // 조회수정 모드가 아닐 때만 disabled 해제 처리하기 위해 체크박스의 상태 보장
-      chk.disabled = false;
+  }
+
+  // 2. newMasterExpress 관련 UI 처리 (신규 수동 등록 화면)
+  const masterBadge = document.getElementById('newMasterExpressCountBadge');
+  const masterChk = document.getElementById('newMasterExpress');
+  if (masterBadge) {
+    masterBadge.textContent = `${remaining}회 / ${limit}회`;
+    if (remaining <= 0) {
+      masterBadge.style.background = '#f1f5f9';
+      masterBadge.style.color = '#94a3b8';
+      masterBadge.style.border = '1px solid #cbd5e1';
+      if (masterChk) {
+        masterChk.disabled = true;
+        masterChk.checked = false;
+      }
+      masterBadge.textContent = `사용 불가`;
+    } else {
+      masterBadge.style.background = '#fee2e2';
+      masterBadge.style.color = '#ef4444';
+      masterBadge.style.border = 'none';
+      if (masterChk) {
+        masterChk.disabled = false;
+      }
     }
   }
 }
 
 function openBuyerRegisterDetail(item) {
-  // 실시간 Express 잔여 횟수 뱃지 갱신
-  updateExpressCountUI();
-
-  // 만약 상세 조회 시 기존에 Express로 등록된 업체였다면 체크박스를 활성화된 상태로 노출
-  const chk = document.getElementById('regExpress');
-  if (chk) {
-    chk.checked = item.express === true;
-    // 상세조회 화면에서는 임의로 수정이 불가하도록 체크박스를 readonly(disabled) 처리
-    chk.disabled = true;
-  }
   const allViews = ['home-view', 'buyer-eval-view', 'buyer-detail-view', 'buyer-register-view', 'mfr-eval-view', 'mfr-register-view', 'master-search-view', 'eval-master-search-view'];
   allViews.forEach(id => {
     const el = document.getElementById(id);
@@ -965,34 +978,155 @@ function openBuyerRegisterDetail(item) {
   const regView = document.getElementById('buyer-register-view');
   if (regView) regView.style.display = 'flex';
 
-  // 헤더 타이틀 변경: "신규 업체 등록" -> "업체 상세 정보"
-  const titleEl = regView.querySelector('.header-title');
-  if (titleEl) titleEl.textContent = '업체 상세 정보';
+  // 디폴트로 읽기 전용 조회 모드 셋업
+  setBuyerRegDetailMode(true);
 
-  // 입력 필드 채우기
+  // 1. 등록 일자
   const regDate = document.getElementById('regDate');
   if (regDate) regDate.value = item.date || new Date().toISOString().split('T')[0];
 
+  // 2. 업체명
   const regCompanyName = document.getElementById('regCompanyName');
   if (regCompanyName) regCompanyName.value = item.name || '';
 
-  const regLicense = document.getElementById('regLicense');
-  if (regLicense) regLicense.value = item.licenseNo || '120-81-22456';
+  // 3. 점포명
+  const regStoreName = document.getElementById('regStoreName');
+  if (regStoreName) regStoreName.value = item.storeName || '본점 (소공점)';
 
+  // 4. 사업부
   const regDiv = document.getElementById('regDiv');
   if (regDiv) regDiv.value = item.div || '농산';
 
+  // 5. 업태
   const regBiz = document.getElementById('regBiz');
   if (regBiz) regBiz.value = item.biz || '제조가공업';
 
+  // 6. VHR 유형
   const regVhr = document.querySelector(`input[name="regVhr"][value="${item.vhr || 'R'}"]`);
   if (regVhr) regVhr.checked = true;
+
+  // 7. 주소
+  const regAddress = document.getElementById('regAddress');
+  if (regAddress) regAddress.value = item.address || '서울시 중구 소공동 1번지';
+
+  // 8. 사업자등록번호
+  const regLicense = document.getElementById('regLicense');
+  if (regLicense) regLicense.value = item.licenseNo || '120-81-22456';
+
+  // 9. 대표자명
+  const regOwner = document.getElementById('regOwner');
+  if (regOwner) regOwner.value = item.owner || '홍길동';
+
+  // 10. 대표품목
+  const regMainItem = document.getElementById('regMainItem');
+  if (regMainItem) regMainItem.value = item.category || '빵류, 과자류';
+
+  // 11. 매출액
+  const regSales = document.getElementById('regSales');
+  if (regSales) regSales.value = item.sales || '50억원';
+
+  // 12. 주요거래처
+  const regPartners = document.getElementById('regPartners');
+  if (regPartners) regPartners.value = item.clients || '롯데백화점, 롯데마트';
+
+  // 13. 근무인원
+  const regEmployeeCount = document.getElementById('regEmployeeCount');
+  if (regEmployeeCount) regEmployeeCount.value = item.employees || '45';
+
+  // 14. 인증여부
+  const regCert = document.getElementById('regCert');
+  if (regCert) regCert.value = item.cert || 'HACCP 인증';
+
+  // 15. 담당 Buyer
+  const regBuyerName = document.getElementById('regBuyerName');
+  if (regBuyerName) regBuyerName.value = item.buyerName || '김바이어';
+
+  // 16. 기타 특이사항
+  const regNotes = document.getElementById('regNotes');
+  if (regNotes) regNotes.value = item.notes || '기타 특이사항 없음.';
+
+  // 17. Express 여부 체크박스 상태 강제 잠금
+  const chk = document.getElementById('regExpress');
+  if (chk) {
+    chk.checked = item.express === true;
+    chk.disabled = true;
+  }
+  updateExpressCountUI();
 
   // 하단 버튼 텍스트 수정 완료로 변경
   const btnSubmit = document.getElementById('btnSubmitRegister');
   if (btnSubmit) btnSubmit.textContent = '업체 정보 수정 완료';
 
   showToast(`"${item.name}" 업체 상세 정보를 로드했습니다.`);
+}
+
+function setBuyerRegDetailMode(readOnly) {
+  const regView = document.getElementById('buyer-register-view');
+  if (!regView) return;
+
+  const titleEl = document.getElementById('txt-buyer-register-title');
+  const btnEdit = document.getElementById('btnBuyerRegDetailEdit');
+  const spacer = document.getElementById('buyerRegHeaderSpacer');
+  const actions = regView.querySelector('.form-actions');
+
+  if (titleEl) {
+    titleEl.textContent = readOnly ? '업체 상세 정보' : '업체 정보 수정';
+  }
+
+  if (btnEdit && spacer) {
+    if (readOnly) {
+      btnEdit.style.display = 'block';
+      spacer.style.display = 'none';
+    } else {
+      btnEdit.style.display = 'none';
+      spacer.style.display = 'block';
+    }
+  }
+
+  // 하단 액션 버튼 그룹 숨김/노출
+  if (actions) {
+    actions.style.display = readOnly ? 'none' : 'block';
+  }
+
+  // 17개 입력 필드 비활성화/활성화
+  const formFields = [
+    'regDate', 'regCompanyName', 'regStoreName', 'regDiv', 'regBiz',
+    'regAddress', 'regLicense', 'regOwner', 'regMainItem', 'regSales',
+    'regPartners', 'regEmployeeCount', 'regCert', 'regBuyerName', 'regNotes'
+  ];
+
+  formFields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      if (id === 'regCompanyName') {
+        // 업체명은 신규/수정 공통적으로 마스터 연동이므로 readonly 잠금 유지
+        el.disabled = true;
+        el.style.background = '#f8fafc';
+        el.style.cursor = 'not-allowed';
+      } else {
+        el.disabled = readOnly;
+        if (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA') {
+          if (readOnly) {
+            el.style.background = '#f8fafc';
+            el.style.cursor = 'not-allowed';
+          } else {
+            el.style.background = '#ffffff';
+            el.style.cursor = 'text';
+          }
+        }
+      }
+    }
+  });
+
+  // 라디오 및 체크박스 잠금
+  const inputs = regView.querySelectorAll('input[type="radio"], input[type="checkbox"]');
+  inputs.forEach(input => {
+    input.disabled = readOnly;
+  });
+
+  // 업체 검색 버튼 비활성화
+  const btnSearch = document.getElementById('btnBuyerSearchMaster');
+  if (btnSearch) btnSearch.disabled = readOnly;
 }
 
 function openBuyerDetail(item) {
@@ -1027,12 +1161,11 @@ function openBuyerDetail(item) {
   const grid = document.getElementById('uploadPreviewGrid');
   if (grid) grid.innerHTML = '';
 
-  // status가 pending이 아니면(fit/unfit 이면) 조회 전용 모드로 설정
-  if (item.status && item.status !== 'pending') {
-    setBuyerDetailMode(true);
-  } else {
-    setBuyerDetailMode(false);
-  }
+  // 모든 상태의 평가 이력은 디폴트로 읽기 전용 조회 모드로 연다.
+  setBuyerDetailMode(true);
+
+  // 평가 항목별 상세 결과 카드 리스트 렌더링 호출
+  renderChecklistQuestions();
 }
 
 function setBuyerDetailMode(readOnly) {
@@ -1193,6 +1326,16 @@ function renderChecklistQuestions() {
           hasPhoto = true; // 첫 부적합 문항은 가상 증빙 사진 매핑
         } else {
           initialMemo = '손 소독 관리 대장 및 소독기 정상 작동 확인.';
+        }
+      } else if (activeBuyerItem.status === 'pending') {
+        // 대기(pending) 상태인 경우에도 예시로 데이터 맵핑하여 빈 껍데기가 아닌 우수한 시각 피드백 제공
+        initialResult = idx === 1 ? 'unfit' : 'fit';
+        if (idx === 1) {
+          initialMemo = '일부 종사자 위생용 장갑 손가락 구멍 뚫림 발견 및 즉시 폐기 조치 지침 전달.';
+          hasPhoto = true; // 2번째 부적합 문항은 증빙 사진 매핑
+        } else {
+          initialMemo = '점검 기준 적격 충족 및 준수 상태 양호함.';
+          hasPhoto = idx === 0;
         }
       }
     }
@@ -1526,6 +1669,9 @@ function initMfrEval() {
   });
 
   btnMfrHeaderAdd?.addEventListener('click', () => {
+    // 신규 업체 등록할 때에는 폼 활성화 모드로 초기화
+    setMfrDetailMode(false);
+
     if (mfrEvalView) mfrEvalView.style.display = 'none';
     if (mfrRegisterView) mfrRegisterView.style.display = 'flex';
     document.getElementById('txt-mfr-register-title').textContent = '제조사 업체 등록';
@@ -1537,6 +1683,10 @@ function initMfrEval() {
     renderMfrRegSearchCards();
     
     document.getElementById('mfrRegOemSubSection').style.display = 'flex';
+  });
+
+  document.getElementById('btnMfrDetailEdit')?.addEventListener('click', () => {
+    setMfrDetailMode(false);
   });
 
   btnMfrBackToEvalFromReg?.addEventListener('click', () => {
@@ -1825,7 +1975,8 @@ function openMfrProfileEdit(item) {
   if (mfrEvalView) mfrEvalView.style.display = 'none';
   if (mfrRegisterView) mfrRegisterView.style.display = 'flex';
   
-  document.getElementById('txt-mfr-register-title').textContent = '제조사 정보 상세/수정';
+  // 디폴트로 읽기 전용 조회 모드로 설정
+  setMfrDetailMode(true);
   
   // 상세 진입 시 신규 업체 등록(폼) 탭으로 자동 전환
   const tabMfrRegForm = document.getElementById('tabMfrRegForm');
@@ -1900,7 +2051,7 @@ function openMfrProfileEdit(item) {
 function openMfrDetail(item) {
   activeMfrItem = item;
   const mfrEvalView = document.getElementById('mfr-eval-view');
-  const mfrDetailView = document.getElementById('mfr-detail-view');
+  const mfrDetailView = document.getElementById('mfr-register-view'); // mfr-detail-view -> mfr-register-view 교정
   if (mfrEvalView) mfrEvalView.style.display = 'none';
   if (mfrDetailView) mfrDetailView.style.display = 'flex';
 
@@ -1994,16 +2145,104 @@ function openMfrDetail(item) {
     recheckChk.checked = item.recheck === true;
   }
 
-  // 3. 총평 입력 바인딩 (지시사항 3)
-  const commentInput = document.getElementById('mfrDetailCommentInput');
-  if (commentInput) {
-    commentInput.value = item.comment || '';
-  }
+  // 제조사 이력은 상세 조회 시 항상 읽기 전용 모드로 켠다.
+  setMfrDetailMode(true);
 
   renderMfrChecklistQuestions();
 
   // 평가 및 개선 결과 영역에 더미 PDF 첨부파일 시뮬레이션
   populateDummyEvalFiles(item);
+}
+
+function setMfrDetailMode(readOnly) {
+  isMfrDetailReadOnly = readOnly;
+  const regView = document.getElementById('mfr-register-view');
+  if (!regView) return;
+
+  const titleEl = document.getElementById('txt-mfr-register-title');
+  const btnEdit = document.getElementById('btnMfrDetailEdit');
+  const spacer = document.getElementById('mfrHeaderSpacer');
+  const tabBar = document.getElementById('mfrRegTabBar');
+  const actionsBar = document.getElementById('mfrRegisterActionsBar');
+
+  if (titleEl) {
+    titleEl.textContent = readOnly ? '제조사 평가 상세' : '제조사 평가 수정';
+  }
+
+  if (btnEdit && spacer) {
+    if (readOnly) {
+      btnEdit.style.display = 'block';
+      spacer.style.display = 'none';
+    } else {
+      btnEdit.style.display = 'none';
+      spacer.style.display = 'block';
+    }
+  }
+
+  // 상세 조회 모드일 때는 상단 탭 전환 바(업체검색/신규등록) 숨김
+  if (tabBar) {
+    tabBar.style.display = readOnly ? 'none' : 'flex';
+  }
+
+  // 하단 저장 액션 바 토글
+  if (actionsBar) {
+    actionsBar.style.display = readOnly ? 'none' : 'flex';
+  }
+
+  // 일괄 다운로드 버튼 토글 제어 (조회 모드에서만 노출)
+  const btnEvalBatch = document.getElementById('btnMfrEvalBatchDownload');
+  const btnActionBatch = document.getElementById('btnMfrActionBatchDownload');
+  if (btnEvalBatch) btnEvalBatch.style.display = readOnly ? 'flex' : 'none';
+  if (btnActionBatch) btnActionBatch.style.display = readOnly ? 'flex' : 'none';
+
+  // 폼 내 모든 input, select 필드 활성화/비활성화
+  const formFields = [
+    'mfrRegName', 'mfrRegLicense', 'mfrRegOwner', 'mfrRegAddress', 
+    'mfrRegCategory', 'mfrRegDiv', 'mfrRegBiz', 'mfrRegNotes',
+    'mfrRegDate', 'mfrRegInspector', 'mfrRegManager', 'mfrDetailCommentInput',
+    'mfrDetailManagerInput', 'mfrRegSales', 'mfrRegClients', 'mfrRegEmployees',
+    'mfrRegCert', 'mfrRegMemo'
+  ];
+
+  formFields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.disabled = readOnly;
+      if (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA') {
+        if (readOnly) {
+          el.style.background = '#f8fafc';
+          el.style.cursor = 'not-allowed';
+        } else {
+          el.style.background = '#ffffff';
+          el.style.cursor = 'text';
+        }
+      }
+    }
+  });
+
+  // 드래그 앤 드롭 파일 업로드 가이드존 비활성화 스타일 적용
+  const uploadZones = regView.querySelectorAll('.upload-trigger-zone');
+  uploadZones.forEach(zone => {
+    if (readOnly) {
+      zone.style.pointerEvents = 'none';
+      zone.style.opacity = '0.6';
+    } else {
+      zone.style.pointerEvents = 'auto';
+      zone.style.opacity = '1';
+    }
+  });
+
+  // 라디오 및 체크박스 비활성화
+  const inputs = regView.querySelectorAll('input[type="radio"], input[type="checkbox"]');
+  inputs.forEach(input => {
+    input.disabled = readOnly;
+  });
+
+  // 거래업체 검색 등 특수 기능 버튼 비활성화
+  const btnSearchPartner = document.getElementById('btnMfrSearchPartner');
+  const btnDetailSearchPartner = document.getElementById('btnMfrDetailSearchPartner');
+  if (btnSearchPartner) btnSearchPartner.disabled = readOnly;
+  if (btnDetailSearchPartner) btnDetailSearchPartner.disabled = readOnly;
 }
 
 function populateDummyEvalFiles(item) {
@@ -2026,6 +2265,18 @@ function populateDummyEvalFiles(item) {
   function createFileChip(file) {
     const chip = document.createElement('div');
     chip.style.cssText = 'display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; width: 100%; box-sizing: border-box; transition: all 0.2s;';
+    
+    // 조회 모드일 때만 다운로드 버튼을 덧붙임
+    const rightEl = isMfrDetailReadOnly
+      ? `<button type="button" class="btn-file-download" style="background: #f1f5f9; border: 1px solid #cbd5e1; cursor: pointer; padding: 6px; display: flex; align-items: center; justify-content: center; color: #475569; border-radius: 6px; transition: all 0.2s;" title="다운로드">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 13px; height: 13px;">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+         </button>`
+      : `<span style="font-size: 10px; color: #10b981; font-weight: 700; background: #ecfdf5; padding: 2px 6px; border-radius: 4px; flex-shrink: 0;">업로드 완료</span>`;
+
     chip.innerHTML = `
       <div style="width: 36px; height: 36px; background: #fef2f2; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
         <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" style="width: 18px; height: 18px;">
@@ -2039,8 +2290,17 @@ function populateDummyEvalFiles(item) {
         <span style="font-size: 12px; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${file.name}</span>
         <span style="font-size: 10px; color: #94a3b8;">PDF • ${file.size}</span>
       </div>
-      <span style="font-size: 10px; color: #10b981; font-weight: 700; background: #ecfdf5; padding: 2px 6px; border-radius: 4px; flex-shrink: 0;">업로드 완료</span>
+      ${rightEl}
     `;
+
+    const dlBtn = chip.querySelector('.btn-file-download');
+    if (dlBtn) {
+      dlBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showToast(`"${file.name}" 개별 파일 다운로드를 시작합니다.`);
+      });
+    }
+
     return chip;
   }
 
@@ -2052,6 +2312,23 @@ function populateDummyEvalFiles(item) {
   if (fileGrid) {
     fileGrid.innerHTML = '';
     actionDummyFiles.forEach(f => fileGrid.appendChild(createFileChip(f)));
+  }
+
+  // 일괄 다운로드 클릭 바인딩
+  const btnEvalBatch = document.getElementById('btnMfrEvalBatchDownload');
+  if (btnEvalBatch) {
+    btnEvalBatch.onclick = (e) => {
+      e.stopPropagation();
+      showToast(`[평가 등록] 첨부파일 2건 일괄 다운로드를 진행합니다.`);
+    };
+  }
+
+  const btnActionBatch = document.getElementById('btnMfrActionBatchDownload');
+  if (btnActionBatch) {
+    btnActionBatch.onclick = (e) => {
+      e.stopPropagation();
+      showToast(`[개선 조치] 첨부파일 3건 일괄 다운로드를 진행합니다.`);
+    };
   }
 }
 
@@ -2068,6 +2345,18 @@ function renderMfrChecklistQuestions() {
   dummyQuestions.forEach((q, idx) => {
     const card = document.createElement('div');
     card.className = 'inspect-card';
+
+    let initialResult = '';
+    if (activeMfrItem) {
+      if (activeMfrItem.status === 'completed') {
+        initialResult = idx === 1 ? 'unfit' : 'fit';
+      } else {
+        initialResult = '';
+      }
+    }
+    const isFitActive = initialResult === 'fit' ? 'active' : '';
+    const isUnfitActive = initialResult === 'unfit' ? 'active' : '';
+
     card.innerHTML = `
       <div class="inspect-card-header" style="position: relative;">
         <span class="item-num">점검 항목 ${idx + 1}</span>
@@ -2077,13 +2366,13 @@ function renderMfrChecklistQuestions() {
         </div>
         <p class="item-desc" style="margin-top: 4px;">[${q.category}] 현장 위해 요소 및 위생 지침 기준 적정성</p>
       </div>
-      <div class="binary-control" data-qid="${q.id}">
-        <button class="binary-btn btn-fit" data-result="fit">적합</button>
-        <button class="binary-btn btn-unfit" data-result="unfit">부적합</button>
+      <div class="binary-control" data-qid="${q.id}" style="${isMfrDetailReadOnly ? 'pointer-events: none; opacity: 0.85;' : ''}">
+        <button class="binary-btn btn-fit ${isFitActive}" data-result="fit">적합</button>
+        <button class="binary-btn btn-unfit ${isUnfitActive}" data-result="unfit">부적합</button>
       </div>
       
       <div class="inspect-card-extra" style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #e2e8f0; display: flex; flex-direction: column; gap: 8px;">
-        <button class="btn-item-detail-page" style="height: 36px; width: 100%; border: 1px dashed #cbd5e1; background: #ffffff; color: #475569; font-size: 12px; font-weight: 700; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s;">
+        <button class="btn-item-detail-page" ${isMfrDetailReadOnly ? 'disabled style="pointer-events: none; opacity: 0.6;"' : ''} style="height: 36px; width: 100%; border: 1px dashed #cbd5e1; background: #ffffff; color: #475569; font-size: 12px; font-weight: 700; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.2s;">
           상세 내용 및 증빙 사진 추가
         </button>
       </div>
@@ -2279,14 +2568,81 @@ function initMasterSearch() {
       showToast('신규 업체명을 입력해 주세요.');
       return;
     }
+
+    const isExpress = document.getElementById('newMasterExpress')?.checked || false;
+    if (isExpress) {
+      const usedCount = buyerMockData.filter(d => d.express === true).length;
+      if (usedCount >= 5) {
+        showToast('Express 긴급 요청건은 월 최대 5회까지만 사용 가능합니다. (초과됨)');
+        return;
+      }
+    }
+
+    const license = document.getElementById('newMasterLicense')?.value.trim() || '120-81-22456';
+    const storeName = document.getElementById('newMasterStoreName')?.value || '본점 (소공점)';
+    const div = document.getElementById('newMasterDiv')?.value || '농산';
+    const biz = document.getElementById('newMasterBiz')?.value || '제조가공업';
+    const vhr = document.querySelector('input[name="newMasterVhr"]:checked')?.value || 'R';
+    const date = document.getElementById('newMasterDate')?.value || new Date().toISOString().split('T')[0];
+
+    const newMasterObj = {
+      id: 'M' + (companyMasterList.length + 1),
+      name: name,
+      licenseNo: license,
+      storeName: storeName,
+      div: div,
+      biz: biz,
+      vhr: vhr,
+      date: date,
+      express: isExpress
+    };
+    companyMasterList.unshift(newMasterObj);
     showToast(`신규 업체 "${name}" 등록이 완료되었습니다.`);
-    
-    // 자동 맵핑 처리
-    const prefix = currentSearchType === 'buyer' ? 'reg' : 'mfrReg';
-    const nameInput = document.getElementById(prefix + 'CompanyName') || document.getElementById('mfrRegName');
-    
-    if (nameInput) nameInput.value = name;
-    
+
+    // 바이어 등록 폼(buyer-register-view)의 17개 필드로 정보 동기화 이관
+    if (currentSearchType === 'buyer') {
+      const regCompanyName = document.getElementById('regCompanyName');
+      if (regCompanyName) regCompanyName.value = name;
+      const regLicense = document.getElementById('regLicense');
+      if (regLicense) regLicense.value = license;
+      const regStoreName = document.getElementById('regStoreName');
+      if (regStoreName) regStoreName.value = storeName;
+      const regDiv = document.getElementById('regDiv');
+      if (regDiv) regDiv.value = div;
+      const regBiz = document.getElementById('regBiz');
+      if (regBiz) regBiz.value = biz;
+      const regDate = document.getElementById('regDate');
+      if (regDate) regDate.value = date;
+
+      const regVhrInput = document.querySelector(`input[name="regVhr"][value="${vhr}"]`);
+      if (regVhrInput) regVhrInput.checked = true;
+
+      const regExpressInput = document.getElementById('regExpress');
+      if (regExpressInput) regExpressInput.checked = isExpress;
+
+      const regAddress = document.getElementById('regAddress');
+      if (regAddress) regAddress.value = document.getElementById('newMasterAddress')?.value || '';
+      const regOwner = document.getElementById('regOwner');
+      if (regOwner) regOwner.value = document.getElementById('newMasterOwner')?.value || '';
+      const regMainItem = document.getElementById('regMainItem');
+      if (regMainItem) regMainItem.value = document.getElementById('newMasterCategory')?.value || '';
+      const regSales = document.getElementById('regSales');
+      if (regSales) regSales.value = document.getElementById('newMasterSales')?.value || '';
+      const regPartners = document.getElementById('regPartners');
+      if (regPartners) regPartners.value = document.getElementById('newMasterPartners')?.value || '';
+      const regEmployeeCount = document.getElementById('regEmployeeCount');
+      if (regEmployeeCount) regEmployeeCount.value = document.getElementById('newMasterEmployeeCount')?.value || '';
+      const regCert = document.getElementById('regCert');
+      if (regCert) regCert.value = document.getElementById('newMasterCert')?.value || '';
+      const regBuyerName = document.getElementById('regBuyerName');
+      if (regBuyerName) regBuyerName.value = document.getElementById('newMasterBuyerName')?.value || '';
+      const regNotes = document.getElementById('regNotes');
+      if (regNotes) regNotes.value = document.getElementById('newMasterNotes')?.value || '';
+
+      // Express 잔여 횟수 실시간 동기화
+      updateExpressCountUI();
+    }
+
     if (masterSearchView) masterSearchView.style.display = 'none';
     const prev = document.getElementById(previousViewId);
     if (prev) prev.style.display = 'flex';
@@ -2651,6 +3007,9 @@ document.getElementById('btnHeaderAdd')?.addEventListener('click', () => {
     // 업체 관리 플러스 클릭 시 ➡️ 기존 master-search-view 노출
     openMasterSearch('buyer', 'buyer-eval-view', '신규 업체 등록');
     
+    // 신규 모드로 활성화 상태 셋업
+    setBuyerRegDetailMode(false);
+
     // 신규 모드로 타이틀 및 버튼 복원
     const regView = document.getElementById('buyer-register-view');
     if (regView) {
@@ -2673,6 +3032,10 @@ document.getElementById('btnHeaderAdd')?.addEventListener('click', () => {
     const regLicense = document.getElementById('regLicense');
     if (regLicense) regLicense.value = '';
   }
+});
+
+document.getElementById('btnBuyerRegDetailEdit')?.addEventListener('click', () => {
+  setBuyerRegDetailMode(false);
 });
 
 // 바이어 등록 뒤로가기
