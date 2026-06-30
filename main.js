@@ -682,7 +682,7 @@ function setBuyerDetailMode(readOnly) {
   const grid = document.getElementById('uploadPreviewGrid');
 
   if (titleEl) {
-    titleEl.textContent = readOnly ? '상세 평가 결과 조회' : (activeBuyerItem?.status === 'pending' ? '상세 평가 등록' : '상세 평가 수정');
+    titleEl.textContent = readOnly ? '평가 결과 상세' : (activeBuyerItem?.status === 'pending' ? '상세 평가 등록' : '상세 평가 수정');
   }
   
   if (draftActions) draftActions.style.display = readOnly ? 'none' : 'flex';
@@ -1045,14 +1045,32 @@ function initMfrEval() {
       return item.name.toLowerCase().includes(query) || item.license.replace(/-/g, '').includes(query.replace(/-/g, ''));
     });
 
-    if (filtered.length === 0) {
+    if (filtered.length === 0 && query.length > 0) {
       grid.innerHTML = `
         <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; text-align: center;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 42px; height: 42px; color: #94a3b8; margin-bottom: 8px;">
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
-          <span style="font-size: 13px; color: #64748b; font-weight: 500;">검색 결과가 없습니다.</span>
+          <span style="font-size: 13px; color: #64748b; font-weight: 500; margin-bottom: 16px;">검색 결과가 없습니다.</span>
+          <button type="button" id="btnGoToMfrRegFromSearch" style="width: 100%; max-width: 220px; height: 44px; background: #0f172a; color: #ffffff; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            신규 업체 등록
+          </button>
+        </div>
+      `;
+      document.getElementById('btnGoToMfrRegFromSearch')?.addEventListener('click', () => {
+        tabMfrRegForm?.click();
+      });
+      return;
+    } else if (filtered.length === 0) {
+      grid.innerHTML = `
+        <div style="grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; text-align: center;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width: 42px; height: 42px; color: #94a3b8; margin-bottom: 8px;">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <span style="font-size: 13px; color: #64748b; font-weight: 500;">업체명 또는 사업자등록번호를 입력해 주세요.</span>
         </div>
       `;
       return;
@@ -1295,6 +1313,7 @@ function renderMfrCompanyList() {
     
     card.addEventListener('click', () => {
       openMfrProfileEdit(item);
+      populateDummyEvalFiles(item);
     });
     container.appendChild(card);
   });
@@ -1433,6 +1452,10 @@ function openMfrProfileEdit(item) {
   if (mfrRegisterView) mfrRegisterView.style.display = 'flex';
   
   document.getElementById('txt-mfr-register-title').textContent = '제조사 정보 상세/수정';
+  
+  // 상세 진입 시 신규 업체 등록(폼) 탭으로 자동 전환
+  const tabMfrRegForm = document.getElementById('tabMfrRegForm');
+  if (tabMfrRegForm) tabMfrRegForm.click();
   
   // 기본 정보 매핑
   document.getElementById('mfrRegName').value = item.name;
@@ -1604,6 +1627,58 @@ function openMfrDetail(item) {
   }
 
   renderMfrChecklistQuestions();
+
+  // 평가 및 개선 결과 영역에 더미 PDF 첨부파일 시뮬레이션
+  populateDummyEvalFiles(item);
+}
+
+function populateDummyEvalFiles(item) {
+  const evalGrid = document.getElementById('mfrRegImagePreviewGrid');
+  const fileGrid = document.getElementById('mfrRegFilePreviewGrid');
+
+  // 평가 등록 파일 더미
+  const evalDummyFiles = [
+    { name: `${item.name}_현장평가보고서_2026.pdf`, size: '2.4 MB' },
+    { name: `위생점검_체크리스트_${item.name}.pdf`, size: '1.1 MB' }
+  ];
+
+  // 개선 조치 파일 더미
+  const actionDummyFiles = [
+    { name: `${item.name}_개선조치결과서_2026.pdf`, size: '3.7 MB' },
+    { name: `시정조치_증빙자료_${item.name}.pdf`, size: '980 KB' },
+    { name: `HACCP_인증서_사본.pdf`, size: '512 KB' }
+  ];
+
+  function createFileChip(file) {
+    const chip = document.createElement('div');
+    chip.style.cssText = 'display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; width: 100%; box-sizing: border-box; transition: all 0.2s;';
+    chip.innerHTML = `
+      <div style="width: 36px; height: 36px; background: #fef2f2; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" style="width: 18px; height: 18px;">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0;">
+        <span style="font-size: 12px; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${file.name}</span>
+        <span style="font-size: 10px; color: #94a3b8;">PDF • ${file.size}</span>
+      </div>
+      <span style="font-size: 10px; color: #10b981; font-weight: 700; background: #ecfdf5; padding: 2px 6px; border-radius: 4px; flex-shrink: 0;">업로드 완료</span>
+    `;
+    return chip;
+  }
+
+  if (evalGrid) {
+    evalGrid.innerHTML = '';
+    evalDummyFiles.forEach(f => evalGrid.appendChild(createFileChip(f)));
+  }
+
+  if (fileGrid) {
+    fileGrid.innerHTML = '';
+    actionDummyFiles.forEach(f => fileGrid.appendChild(createFileChip(f)));
+  }
 }
 
 function renderMfrChecklistQuestions() {
@@ -1998,15 +2073,15 @@ function initPartnerModal() {
     renderPartnerModalList('');
     updateApplyButtonText();
     
-    if (mfrPartnerSearchModal) mfrPartnerSearchModal.style.display = 'flex';
+    if (mfrPartnerSearchModal) mfrPartnerSearchModal.classList.add('show');
   });
 
   // 모달 닫기
   btnMfrClosePartnerModal?.addEventListener('click', () => {
-    if (mfrPartnerSearchModal) mfrPartnerSearchModal.style.display = 'none';
+    if (mfrPartnerSearchModal) mfrPartnerSearchModal.classList.remove('show');
   });
   btnMfrCancelPartnerSelect?.addEventListener('click', () => {
-    if (mfrPartnerSearchModal) mfrPartnerSearchModal.style.display = 'none';
+    if (mfrPartnerSearchModal) mfrPartnerSearchModal.classList.remove('show');
   });
 
   // 실시간 검색
@@ -2078,7 +2153,7 @@ function initPartnerModal() {
       });
     }
 
-    if (mfrPartnerSearchModal) mfrPartnerSearchModal.style.display = 'none';
+    if (mfrPartnerSearchModal) mfrPartnerSearchModal.classList.remove('show');
     showToast(`${tempSelectedPartners.size}개의 거래업체가 지정되었습니다.`);
   });
 }
