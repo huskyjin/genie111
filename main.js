@@ -1098,21 +1098,14 @@ function setBuyerRegDetailMode(readOnly) {
   formFields.forEach(id => {
     const el = document.getElementById(id);
     if (el) {
-      if (id === 'regCompanyName') {
-        // 업체명은 신규/수정 공통적으로 마스터 연동이므로 readonly 잠금 유지
-        el.disabled = true;
-        el.style.background = '#f8fafc';
-        el.style.cursor = 'not-allowed';
-      } else {
-        el.disabled = readOnly;
-        if (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA') {
-          if (readOnly) {
-            el.style.background = '#f8fafc';
-            el.style.cursor = 'not-allowed';
-          } else {
-            el.style.background = '#ffffff';
-            el.style.cursor = 'text';
-          }
+      el.disabled = readOnly;
+      if (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA') {
+        if (readOnly) {
+          el.style.background = '#f8fafc';
+          el.style.cursor = 'not-allowed';
+        } else {
+          el.style.background = '#ffffff';
+          el.style.cursor = 'text';
         }
       }
     }
@@ -1124,9 +1117,28 @@ function setBuyerRegDetailMode(readOnly) {
     input.disabled = readOnly;
   });
 
-  // 업체 검색 버튼 비활성화
+  // 업체 검색 버튼 및 중복확인 버튼 비활성화
   const btnSearch = document.getElementById('btnBuyerSearchMaster');
   if (btnSearch) btnSearch.disabled = readOnly;
+
+  const btnCheckName = document.getElementById('btnBuyerCheckCompanyName');
+  if (btnCheckName) {
+    btnCheckName.disabled = readOnly;
+    if (!btnCheckName.dataset.bound) {
+      btnCheckName.dataset.bound = 'true';
+      btnCheckName.addEventListener('click', () => {
+        const name = document.getElementById('regCompanyName').value.trim();
+        if (!name) {
+          showToast('업체명을 입력한 후 중복확인을 진행해 주세요.');
+          return;
+        }
+        btnCheckName.style.background = '#cbd5e1';
+        btnCheckName.style.color = '#475569';
+        btnCheckName.textContent = '업체명 중복확인 완료';
+        showToast(`업체명 "${name}"은(는) 등록 가능한 업체명입니다. (중복 검증 완료)`);
+      });
+    }
+  }
 }
 
 function openBuyerDetail(item) {
@@ -1671,6 +1683,14 @@ function initMfrEval() {
   btnMfrHeaderAdd?.addEventListener('click', () => {
     // 신규 업체 등록할 때에는 폼 활성화 모드로 초기화
     setMfrDetailMode(false);
+
+    // 중복확인 버튼 검정색 복원
+    const btnMfrCheck = document.getElementById('btnMfrCheckName');
+    if (btnMfrCheck) {
+      btnMfrCheck.style.background = '#0f172a';
+      btnMfrCheck.style.color = '#ffffff';
+      btnMfrCheck.textContent = '제조사명 중복확인';
+    }
 
     if (mfrEvalView) mfrEvalView.style.display = 'none';
     if (mfrRegisterView) mfrRegisterView.style.display = 'flex';
@@ -2503,6 +2523,9 @@ function initMasterSearch() {
       showToast('제조사명을 입력해 주세요.');
       return;
     }
+    btnMfrCheckName.style.background = '#cbd5e1';
+    btnMfrCheckName.style.color = '#475569';
+    btnMfrCheckName.textContent = '제조사명 중복확인 완료';
     showToast(`'${nameVal}'은(는) 등록 가능한 제조사명입니다.`);
   });
 
@@ -2542,12 +2565,16 @@ function initMasterSearch() {
   masterSearchInput?.addEventListener('input', () => renderMasterSearchCards());
 
   // 중복확인 단추들 (껍데기화: 무조건 통과 피드백 표시)
-  document.getElementById('btnCheckMasterName')?.addEventListener('click', () => {
+  document.getElementById('btnCheckMasterName')?.addEventListener('click', (e) => {
     const feedback = document.getElementById('nameCheckFeedback');
     if (feedback) {
       feedback.textContent = '사용 가능한 업체명입니다. (확인 완료)';
       feedback.className = 'success';
     }
+    const btn = e.currentTarget;
+    btn.style.background = '#cbd5e1';
+    btn.style.color = '#475569';
+    btn.textContent = '업체명 중복확인 완료';
     showToast('업체명 중복 검사 완료');
     isNameChecked = true;
   });
@@ -2691,10 +2718,42 @@ function renderMasterSearchCards() {
 
   if (filteredList.length === 0) {
     grid.innerHTML = `
-      <div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; color: #94a3b8; font-size: 13.5px;">
-        검색 결과와 일치하는 업체가 없습니다.
+      <div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; color: #94a3b8; font-size: 13.5px; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+        <span>검색 결과와 일치하는 업체가 없습니다.</span>
+        <button type="button" class="btn-goto-reg-direct" style="height: 36px; padding: 0 16px; background: #0f172a; color: #ffffff; font-weight: 700; border: none; border-radius: 8px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+          신규 업체 등록
+        </button>
       </div>
     `;
+
+    grid.querySelector('.btn-goto-reg-direct')?.addEventListener('click', () => {
+      const masterSearchView = document.getElementById('master-search-view');
+      if (masterSearchView) masterSearchView.style.display = 'none';
+
+      const regView = document.getElementById('buyer-register-view');
+      if (regView) regView.style.display = 'flex';
+
+      setBuyerRegDetailMode(false);
+
+      const titleEl = regView.querySelector('.header-title');
+      if (titleEl) titleEl.textContent = '신규 업체 등록';
+      const btnSubmit = document.getElementById('btnSubmitRegister');
+      if (btnSubmit) btnSubmit.textContent = '업체 등록 완료';
+
+      const regCompanyName = document.getElementById('regCompanyName');
+      if (regCompanyName) regCompanyName.value = query;
+
+      const regLicense = document.getElementById('regLicense');
+      if (regLicense) regLicense.value = '';
+      const expressChk = document.getElementById('regExpress');
+      if (expressChk) {
+        expressChk.checked = false;
+        expressChk.disabled = false;
+      }
+      updateExpressCountUI();
+
+      showToast(`검색어 "${query}" 가 업체명으로 자동 지정되어 신규 등록을 시작합니다.`);
+    });
     return;
   }
   
@@ -2929,10 +2988,42 @@ function renderEvalMasterSearchCards() {
 
   if (filteredList.length === 0) {
     grid.innerHTML = `
-      <div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; color: #94a3b8; font-size: 13.5px;">
-        검색 결과와 일치하는 업체가 없습니다.
+      <div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; color: #94a3b8; font-size: 13.5px; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+        <span>검색 결과와 일치하는 업체가 없습니다.</span>
+        <button type="button" class="btn-goto-reg-direct" style="height: 36px; padding: 0 16px; background: #0f172a; color: #ffffff; font-weight: 700; border: none; border-radius: 8px; font-size: 12px; cursor: pointer; transition: all 0.2s;">
+          신규 업체 등록
+        </button>
       </div>
     `;
+
+    grid.querySelector('.btn-goto-reg-direct')?.addEventListener('click', () => {
+      const evalSearchView = document.getElementById('eval-master-search-view');
+      if (evalSearchView) evalSearchView.style.display = 'none';
+
+      const regView = document.getElementById('buyer-register-view');
+      if (regView) regView.style.display = 'flex';
+
+      setBuyerRegDetailMode(false);
+
+      const titleEl = regView.querySelector('.header-title');
+      if (titleEl) titleEl.textContent = '신규 업체 등록';
+      const btnSubmit = document.getElementById('btnSubmitRegister');
+      if (btnSubmit) btnSubmit.textContent = '업체 등록 완료';
+
+      const regCompanyName = document.getElementById('regCompanyName');
+      if (regCompanyName) regCompanyName.value = query;
+
+      const regLicense = document.getElementById('regLicense');
+      if (regLicense) regLicense.value = '';
+      const expressChk = document.getElementById('regExpress');
+      if (expressChk) {
+        expressChk.checked = false;
+        expressChk.disabled = false;
+      }
+      updateExpressCountUI();
+
+      showToast(`검색어 "${query}" 가 업체명으로 자동 지정되어 신규 등록을 시작합니다.`);
+    });
     return;
   }
   
@@ -3009,6 +3100,20 @@ document.getElementById('btnHeaderAdd')?.addEventListener('click', () => {
     
     // 신규 모드로 활성화 상태 셋업
     setBuyerRegDetailMode(false);
+
+    // 중복확인 버튼 검정색 복원
+    const btnBuyerCheck = document.getElementById('btnBuyerCheckCompanyName');
+    if (btnBuyerCheck) {
+      btnBuyerCheck.style.background = '#0f172a';
+      btnBuyerCheck.style.color = '#ffffff';
+      btnBuyerCheck.textContent = '업체명 중복확인';
+    }
+    const btnMasterCheck = document.getElementById('btnCheckMasterName');
+    if (btnMasterCheck) {
+      btnMasterCheck.style.background = '#0f172a';
+      btnMasterCheck.style.color = '#ffffff';
+      btnMasterCheck.textContent = '업체명 중복확인';
+    }
 
     // 신규 모드로 타이틀 및 버튼 복원
     const regView = document.getElementById('buyer-register-view');

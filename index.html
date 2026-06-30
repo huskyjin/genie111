@@ -592,10 +592,8 @@
               <!-- 2. 업체명 (필수) -->
               <div class="form-group">
                 <label for="regCompanyName" class="form-label">업체명 <span class="required">*</span></label>
-                <div style="display: flex; gap: 8px;">
-                  <input type="text" id="regCompanyName" class="input-form" placeholder="우측 [업체 검색] 버튼을 눌러주세요." readonly style="background: #f8fafc; cursor: not-allowed; flex: 1;">
-                  <button type="button" id="btnBuyerSearchMaster" style="height: 38px; padding: 0 16px; background: #0f172a; color: #ffffff; font-weight: 700; border: none; border-radius: 8px; font-size: 12px; cursor: pointer; white-space: nowrap;">업체 검색</button>
-                </div>
+                <input type="text" id="regCompanyName" class="input-form" placeholder="등록할 업체명을 입력해 주세요." style="width: 100%; height: 42px; margin-bottom: 8px;">
+                <button type="button" id="btnBuyerCheckCompanyName" style="width: 100%; height: 38px; background: #0f172a; color: #ffffff; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; outline: none;">업체명 중복확인</button>
               </div>
 
               <!-- 3. 점포명 (필수) -->
@@ -1060,7 +1058,7 @@
                 <div class="form-group" style="margin: 0; width: 100%;">
                   <label for="mfrRegName" class="form-label">제조사명 <span class="required">*</span></label>
                   <input type="text" id="mfrRegName" class="input-form" placeholder="정확한 제조사명을 입력해 주세요." style="width: 100%; height: 42px; margin-bottom: 8px;">
-                  <button type="button" id="btnMfrCheckName" style="width: 100%; height: 38px; background: #e2e8f0; color: #475569; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; outline: none;">제조사명 중복확인</button>
+                  <button type="button" id="btnMfrCheckName" style="width: 100%; height: 38px; background: #0f172a; color: #ffffff; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; outline: none;">제조사명 중복확인</button>
                 </div>
 
                 <!-- 사업자등록번호 -->
@@ -1360,10 +1358,8 @@
               <!-- 2. 신규 업체명 -->
               <div class="form-group" style="margin: 0; width: 100%;">
                 <label class="form-label" style="font-size: 12px; font-weight: 700; margin-bottom: 6px;">신규 업체명 <span class="required">*</span></label>
-                <div style="display: flex; gap: 8px; width: 100%; margin-bottom: 6px;">
-                  <input type="text" id="newMasterName" class="input-form" placeholder="정확한 업체명을 입력해 주세요." style="height: 42px; flex: 1;">
-                  <button type="button" id="btnCheckMasterName" style="height: 42px; padding: 0 16px; background: #0f172a; color: #ffffff; font-weight: 700; border: none; border-radius: 8px; font-size: 12px; cursor: pointer; white-space: nowrap; outline: none;">중복 확인</button>
-                </div>
+                <input type="text" id="newMasterName" class="input-form" placeholder="정확한 업체명을 입력해 주세요." style="height: 42px; width: 100%; margin-bottom: 8px;">
+                <button type="button" id="btnCheckMasterName" style="width: 100%; height: 38px; background: #0f172a; color: #ffffff; border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; outline: none; margin-bottom: 6px;">업체명 중복확인</button>
                 <span id="nameCheckFeedback" style="font-size: 11px; font-weight: 600; color: #94a3b8; display: block; margin-top: 2px;">* 업체 중복 검사를 진행해 주세요.</span>
               </div>
 
