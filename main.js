@@ -596,8 +596,9 @@ function initBuyerEval() {
     if (homeView) homeView.style.display = 'flex';
   });
 
-  btnOpenFilter?.addEventListener('click', () => filterOverlay?.classList.add('show'));
-  btnCloseFilter?.addEventListener('click', () => filterOverlay?.classList.remove('show'));
+  btnOpenFilter?.addEventListener('click', () => {
+    alert('클릭 시 검색 필터 노출');
+  });
   filterOverlay?.addEventListener('click', (e) => {
     if (e.target === filterOverlay) filterOverlay.classList.remove('show');
   });
@@ -1707,6 +1708,10 @@ function initMfrEval() {
 
   document.getElementById('btnMfrDetailEdit')?.addEventListener('click', () => {
     setMfrDetailMode(false);
+  });
+
+  document.getElementById('btnMfrOpenFilter')?.addEventListener('click', () => {
+    alert('클릭 시 검색 필터 노출');
   });
 
   btnMfrBackToEvalFromReg?.addEventListener('click', () => {
